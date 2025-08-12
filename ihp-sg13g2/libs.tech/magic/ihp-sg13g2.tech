@@ -29,7 +29,7 @@ end
 version
  version 0.3.0
  description "IHP SG13G2: Open Source rules and DRC"
- requires magic-8.3.524
+ requires magic-8.3.537
 end
 
 #------------------------------------------------------------------------
@@ -87,7 +87,6 @@ planes
   metal3,m3
   metal4,m4
   metal5,m5
-  mimcap,mc
   metal6,m6
   metal7,m7
   comment,c
@@ -216,8 +215,8 @@ types
  -metal5 m5fill
  -metal5 sealvia5,sealv5
 
-  mimcap mimcap,mim,capm
-  mimcap mimcapcontact,mimcapc,mimcc,capmc
+  metal5 mimcap,mim,capm
+  metal5 mimcapcontact,mimcapc,mimcc,capmc
 
 # Metal 6
   metal6 metal6,m6,met6
@@ -517,6 +516,15 @@ compose
   decompose hvnfetesd poly hvndiff
   decompose hvpfetesd poly hvpdiff
 
+  # Prevent m5 from erasing mimcap
+  paint	 mimcap	 m5	mimcap
+  paint	 mimcc	 m5	mimcc
+
+  # Prevent m7 from erasing pillar, solder, or pad
+  paint	 pad	m7	pad
+  paint	 pillar	m7	pillar
+  paint	 solder	m7	solder
+
   paint  ndc     nwell  pdc
   paint  nfet    nwell  pfet
   paint  ndiff   nwell  pdiff
@@ -550,6 +558,7 @@ compose
   # To preserve keep-out areas for pattern fill,
   # do not allow comment to overwrite fillblock.
   paint  fillblock comment fillblock
+
 end
 
 #-----------------------------------------------------
@@ -879,6 +888,13 @@ style gdsii
  layer POLYFILL	polyfill,fillfet
 	labels 	polyfill,fillfet
 	calma	5 22
+
+#----------------------------------------------------------------
+# POLYRES (PolyRes)
+#----------------------------------------------------------------
+
+ layer POLYRES allpolyres
+	calma 128 0
 
 #----------------------------------------------------------------
 # THKOX (ThickGateOx)
@@ -1266,7 +1282,7 @@ style gdsii
 #----------------------------------------------------------------
 # MET5
 #----------------------------------------------------------------
- layer MET5 	allm5,m5fill,sealv5
+ layer MET5 	allm5,m5fill,sealv5,mimcap,mimcc
  	calma 	67 0
 
  layer MET5TXT
@@ -1299,7 +1315,9 @@ style gdsii
 	calma	125 0
 
  layer MIMCC	mimcc
- 	squares-grid 360 420 420
+	# 0.84um separation is not a DRC requirement but is used
+	# in the example MiM cap layouts.
+ 	squares-grid 420 420 840
  	calma 	129 0
 
 #----------------------------------------------------------------
@@ -2180,7 +2198,7 @@ style patternfill variants (),(tiled)
 
  templayer	obstruct_m5 trans,pad,seal
 	grow	580
-	or	allm5,obsm5,m5fill,fillblock
+	or	allm5,*mimcap,obsm5,m5fill,fillblock
         grow    420
 
  templayer	met5fill_coarse topbox
@@ -2195,7 +2213,7 @@ style patternfill variants (),(tiled)
 
  templayer      obstruct_m5_medium trans,pad,seal
 	grow	580
-	or	allm5,obsm5,m5fill,fillblock
+	or	allm5,*mimcap,obsm5,m5fill,fillblock
 	or	met5fill_coarse
         grow    420
 
@@ -2209,7 +2227,7 @@ style patternfill variants (),(tiled)
 
  templayer      obstruct_m5_fine trans,pad,seal
 	grow	580
-	or	allm5,obsm5,m5fill,fillblock
+	or	allm5,*mimcap,obsm5,m5fill,fillblock
 	or	met5fill_coarse,met5fill_medium
         grow    420
 
@@ -3078,15 +3096,14 @@ style  sg13g2 variants ()
  layer m1fill MET1FILL
  labels MET1FILL
 
- layer mimcap MET5
- and MIM
+ layer mimcap MIM
+ and MET5
  labels MIM
 
  layer mimcc VIA5,MIMCC
  and MIM
- grow 60
- grow 40
- shrink 40
+ grow 840
+ shrink 420
  labels MIM
 
  layer m2c VIA1
@@ -3788,7 +3805,7 @@ drc
 	"Diff fill spacing to Deep nwell < %d (AFil.d)"
  spacing difffill  npn,pnp 1000 touching_illegal \
 	"Diff fill spacing to bipolar transistor < %d (AFil.e)"
- angle  difffill,fillfet 90 "Only 90 degree angles permitted on Diff fill (AFil.i)"
+ angles difffill,fillfet 90 "Only 90 degree angles permitted on Diff fill (AFil.i)"
 
  # To be done:  Afil.i, and Afil.j
 
@@ -3865,7 +3882,7 @@ drc
  spacing polyfill  npn,pnp 1100 touching_illegal \
 	"Poly fill spacing to bipolar transistor < %d (GFil.f)"
  overhang *polyfill fillfet 180 "Poly fill overhang of Diff fill < %d (GFil.j)"
- angle  polyfill,fillfet 90 "Only 90 degree angles permitted on Poly fill (GFil.k)"
+ angles polyfill,fillfet 90 "Only 90 degree angles permitted on Poly fill (GFil.k)"
 
  # To do:  max area rule GFil.i
 
@@ -3934,8 +3951,8 @@ drc
  surround hvpsc/a *hvpsd 70 absence_illegal \
 	"P-diffusion overlap of P-diffusion contact < %d (Cnt.c)"
 
- surround pc/a *poly 70 absence_illegal \
-	"poly overlap of poly contact < %d (Cnd.d)"
+ surround pc/a *poly,allfets 70 absence_illegal \
+	"Poly overlap of poly contact < %d (Cnd.d)"
 
  surround pc/m1 *m1,rm1 50 directional \
 	"Metal1 overlap of poly contact < %d in one direction (M1.c1)"
@@ -4007,7 +4024,7 @@ variants *
 	"Metal1 fill spacing to Metal1 < %d (MFil.c)"
  spacing m1fill  npn,pnp 1000 touching_illegal \
 	"Metal1 fill spacing to bipolar transistor < %d (MFil.d)"
- angle  m1fill 90 "Only 90 degree angles permitted on Metal1 fill (MFil.i)"
+ angles m1fill 90 "Only 90 degree angles permitted on Metal1 fill (MFil.i)"
 
 variants (full)
  maxwidth *m1 30000 bend_ok "Metal1 maximum width without slots < %d (Slt.c)"
@@ -4065,7 +4082,7 @@ variants *
 	"Metal2 fill spacing to Metal2 < %d (MFil.c)"
  spacing m2fill  npn,pnp 1000 touching_illegal \
 	"Metal2 fill spacing to bipolar transistor < %d (MFil.d)"
- angle  m2fill 90 "Only 90 degree angles permitted on Metal2 fill (MFil.i)"
+ angles m2fill 90 "Only 90 degree angles permitted on Metal2 fill (MFil.i)"
 
 variants (full)
  maxwidth *m2 30000 bend_ok "Metal2 maximum width without slots < %d (Slt.c)"
@@ -4123,7 +4140,7 @@ variants *
 	"Metal3 fill spacing to Metal3 < %d (MFil.c)"
  spacing m3fill  npn,pnp 1000 touching_illegal \
 	"Metal3 fill spacing to bipolar transistor < %d (MFil.d)"
- angle  m3fill 90 "Only 90 degree angles permitted on Metal3 fill (MFil.i)"
+ angles m3fill 90 "Only 90 degree angles permitted on Metal3 fill (MFil.i)"
 
 variants (full)
  maxwidth *m3 30000 bend_ok "Metal3 maximum width without slots < %d (Slt.c)"
@@ -4181,7 +4198,7 @@ variants *
 	"Metal4 fill spacing to Metal4 < %d (MFil.c)"
  spacing m4fill  npn,pnp 1000 touching_illegal \
 	"Metal4 fill spacing to bipolar transistor < %d (MFil.d)"
- angle  m4fill 90 "Only 90 degree angles permitted on Metal4 fill (MFil.i)"
+ angles m4fill 90 "Only 90 degree angles permitted on Metal4 fill (MFil.i)"
 
 variants (full)
  maxwidth *m4 30000 bend_ok "Metal4 maximum width without slots < %d (Slt.c)"
@@ -4209,37 +4226,38 @@ variants *
 # METAL5 -
 #--------------------------------------------------
 
- width allm5,sealv5 200 "Metal5 width < %d (M5.a)"
- spacing allm5,sealv5  allm5,obsm5,sealv5 210 touching_ok "Metal5 spacing < %d (M5.b)"
- area allm5,obsm5 144000 200 "Metal5 minimum area < %a (M5.d)"
+ width allm5,*mimcap,sealv5 200 "Metal5 width < %d (M5.a)"
+ spacing allm5,*mimcap,sealv5  allm5,*mimcap,obsm5,sealv5 210 touching_ok \
+	"Metal5 spacing < %d (M5.b)"
+ area allm5,*mimcap,obsm5 144000 200 "Metal5 minimum area < %a (M5.d)"
 
- angles allm5 45 "Only 45 and 90 degree angles permitted on metal5 (Grid Rules)"
+ angles allm5,*mimcap 45 "Only 45 and 90 degree angles permitted on metal5 (Grid Rules)"
 
- width *m5,rm5 240 angles "Metal5 drawn at 45 degrees width < %d (M5.g)"
+ width *m5,*mimcap,rm5 240 angles "Metal5 drawn at 45 degrees width < %d (M5.g)"
 
  # NOTE: M5.i is probably not implementable in magic (would require "spacing ... angles"
  # implementation similar to "width ... angles").
 
  variants (fast),(full)
- widespacing allm5,sealv5 395 1005 allm5,*obsm5 240 touching_ok \
+ widespacing allm5,*mimcap,sealv5 395 1005 allm5,*mimcap,*obsm5 240 touching_ok \
 	"Metal5 > 0.39um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
- widespacing *obsm5 395 1005 allm5 240 touching_ok \
+ widespacing *obsm5 395 1005 allm5,*mimcap 240 touching_ok \
 	"Metal5 > 0.39um with runlength > 1.0um spacing to unrelated m5 < %d (M5.e)"
 
- widespacing allm5,sealv5 10005 10005 allm5,*obsm5 600 touching_ok \
+ widespacing allm5,*mimcap,sealv5 10005 10005 allm5,*mimcap,*obsm5 600 touching_ok \
 	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
- widespacing *obsm5 10005 10005 allm5 600 touching_ok \
+ widespacing *obsm5 10005 10005 allm5,*mimcap 600 touching_ok \
 	"Metal5 > 10.0um with runlength > 10.0um spacing to unrelated m5 < %d (M5.f)"
  variants *
 
  width m5fill 1000 "Metal5 fill width < %d (MFil.a1)"
  maxwidth m5fill 5000 both "Metal5 fill width > %d (MFil.a2)"
  spacing m5fill m5fill 420 touching_ok "Metal5 fill spacing < %d (MFil.b)"
- spacing m5fill allm5,obsm5 420 touching_illegal \
+ spacing m5fill allm5,*mimcap,obsm5 420 touching_illegal \
 	"Metal5 fill spacing to Metal5 < %d (MFil.c)"
  spacing m5fill  npn,pnp 1000 touching_illegal \
 	"Metal5 fill spacing to bipolar transistor < %d (MFil.d)"
- angle  m5fill 90 "Only 90 degree angles permitted on Metal5 fill (MFil.i)"
+ angles m5fill 90 "Only 90 degree angles permitted on Metal5 fill (MFil.i)"
 
 variants (full)
  # NOTE:  This rule needs to exclude MiM cap bottom plates
@@ -4278,7 +4296,7 @@ variants *
 	"Metal6 fill spacing to Metal7 < %d (TM1Fil.c)"
  spacing m6fill  npn,pnp 4900 touching_illegal \
 	"Metal6 fill spacing to bipolar transistor < %d (TM1Fil.d)"
- angle  m6fill 90 "Only 90 degree angles permitted on Metal6 fill (TM1Fil.g)"
+ angles m6fill 90 "Only 90 degree angles permitted on Metal6 fill (TM1Fil.g)"
 
 variants (full)
  maxwidth *m6 30000 bend_ok "Metal6 maximum width without slots < %d (Slt.c)"
@@ -4313,7 +4331,8 @@ variants *
 	"Metal7 > 5.0um with runlength > 50.0um spacing to unrelated m7 < %d (TM2.bR)"
  variants *
 
- angles allm7 45 "Only 45 and 90 degree angles permitted on metal7 (Grid Rules)"
+ angles allm7,pillar,solder,pad 45 \
+	"Only 45 and 90 degree angles permitted on metal7 (Grid Rules)"
 
  width m7fill 5000 "Metal7 fill width < %d (TM2Fil.a)"
  maxwidth m7fill 10000 both "Metal7 fill width > %d (TM2Fil.a1)"
@@ -4322,7 +4341,7 @@ variants *
 	"Metal7 fill spacing to Metal7 < %d (TM2Fil.c)"
  spacing m7fill  npn,pnp 4900 touching_illegal \
 	"Metal7 fill spacing to bipolar transistor < %d (TM2Fil.d)"
- angle  m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
+ angles m7fill 90 "Only 90 degree angles permitted on Metal7 fill (TM2Fil.g)"
 
  variants (full)
  surround pillar allm7 7500 absence_illegal \
@@ -4461,12 +4480,13 @@ variants *
 
  # MiM cap contact rules (Vmim)
 
- width mimcc/m6 1140 "MiM contact width < %d (TV1.a + 2 * MIM.d)"
+ width mimcc/m6 1260 "MiM contact width < %d (TV1.a + 2 * TV1.d)"
 
- surround mimcc/m6 *m6,rm6 60 absence_illegal \
-	"Metal6 overlap of MiM contact < %d (TV1.d - MIM.d)"
-
+ # Prevent interactions between MIMCC and VIA5
  exact_overlap mimcc/m6
+ no_overlap mimcc/m6 via5/m6
+ spacing mimcc/m6 via5/m6 1117 touching_illegal \
+	"MiM cap contact to TopVia1 spacing < 1.17um (MIM.c + MIM.d + M5.b)"
 
  variants (full)
  cifmaxwidth mimcap_missing_via 0 bend_illegal \
@@ -4627,16 +4647,15 @@ extract
  planeorder metal6      8
  planeorder metal7      9
  planeorder comment    10
- planeorder mimcap     11
 
  # Antenna check parameters
  # Note that checks w/diode diffusion are not modeled
  # TBD: add ratio with protection diode
  model cumulative
  antenna poly surface 200 none
- antenna allm1,allm2,allm3,allm4,allm5,allm6,allm7 surface 200 none
+ antenna allm1,allm2,allm3,allm4,allm5,*mimcap,allm6,allm7 surface 200 none
  antenna allcont surface 20 none
- antenna v1,v2,v3,v4,v5,v6 surface 20 none
+ antenna v1,v2,v3,v4,v5,v6,mimcc surface 20 none
 
  tiedown alldiffnonfet
 
@@ -4664,7 +4683,7 @@ variants ()
  resist (allm2)/metal2            88
  resist (allm3)/metal3            88
  resist (allm4)/metal4            88
- resist (allm5)/metal5            88
+ resist (allm5,*mimcap)/metal5    88
  resist (allm6)/metal6            18
  resist (allm7)/metal7            11
  
@@ -4690,7 +4709,7 @@ variants (hrhc),(hrlc)
  resist (allm2)/metal2           103
  resist (allm3)/metal3           103
  resist (allm4)/metal4           103
- resist (allm5)/metal5           103
+ resist (allm5,*mimcap)/metal5   103
  resist (allm6)/metal6            21
  resist (allm7)/metal7            14.5
 
@@ -4716,7 +4735,7 @@ variants (lrhc),(lrlc)
  resist (allm2)/metal2            73
  resist (allm3)/metal3            73
  resist (allm4)/metal4            73
- resist (allm5)/metal5            73
+ resist (allm5,*mimcap)/metal5    73
  resist (allm6)/metal6            15
  resist (allm7)/metal7             7.5
 
@@ -4915,50 +4934,50 @@ variants ()
  defaultsideoverlap allm3 metal3 allm4 metal4 40.019
 
 # metal5
- defaultsidewall    allm5 metal5 53.129 0.021
- defaultareacap     allm5 metal5 7.136
- defaultperimeter   allm5 metal5 27.527
+ defaultsidewall    allm5,*mimcap metal5 53.129 0.021
+ defaultareacap     allm5,*mimcap metal5 7.136
+ defaultperimeter   allm5,*mimcap metal5 27.527
 
 # metal5->subs
- defaultoverlap     allm5 metal5 pwell well  7.136
- defaultsideoverlap allm5 metal5 pwell well  27.527
+ defaultoverlap     allm5,*mimcap metal5 pwell well  7.136
+ defaultsideoverlap allm5,*mimcap metal5 pwell well  27.527
 
 # metal5->nwell
- defaultoverlap     allm5 metal5 nwell well  7.136
- defaultsideoverlap allm5 metal5 nwell well  27.527
+ defaultoverlap     allm5,*mimcap metal5 nwell well  7.136
+ defaultsideoverlap allm5,*mimcap metal5 nwell well  27.527
 
 # metal5->diff
- defaultoverlap     allm5 metal5 alldifflvnonfet active  7.766
- defaultsideoverlap allm5 metal5 alldifflvnonfet active  28.227
+ defaultoverlap     allm5,*mimcap metal5 alldifflvnonfet active  7.766
+ defaultsideoverlap allm5,*mimcap metal5 alldifflvnonfet active  28.227
 
 # metal5->hvdiff
- defaultoverlap     allm5 metal5 alldiffhvnonfet active  7.758
- defaultsideoverlap allm5 metal5 alldiffhvnonfet active  28.221
+ defaultoverlap     allm5,*mimcap metal5 alldiffhvnonfet active  7.758
+ defaultsideoverlap allm5,*mimcap metal5 alldiffhvnonfet active  28.221
 
 # metal5->gatpoly
- defaultoverlap     allm5 metal5 allpoly active 8.046
- defaultsideoverlap allm5 metal5 allpoly active 28.414
- defaultsideoverlap allpoly active allm5 metal5 4.178
+ defaultoverlap     allm5,*mimcap metal5 allpoly active 8.046
+ defaultsideoverlap allm5,*mimcap metal5 allpoly active 28.414
+ defaultsideoverlap allpoly active allm5,*mimcap metal5 4.178
 
 # metal5->metal1
- defaultoverlap     allm5 metal5 allm1 metal1 10.000
- defaultsideoverlap allm5 metal5 allm1 metal1 29.935
- defaultsideoverlap allm1 metal1 allm5 metal5 9.725
+ defaultoverlap     allm5,*mimcap metal5 allm1 metal1 10.000
+ defaultsideoverlap allm5,*mimcap metal5 allm1 metal1 29.935
+ defaultsideoverlap allm1 metal1 allm5,*mimcap metal5 9.725
 
 # metal5->metal2
- defaultoverlap     allm5 metal5 allm2 metal2 13.962
- defaultsideoverlap allm5 metal5 allm2 metal2 32.116
- defaultsideoverlap allm2 metal2 allm5 metal5 16.534
+ defaultoverlap     allm5,*mimcap metal5 allm2 metal2 13.962
+ defaultsideoverlap allm5,*mimcap metal5 allm2 metal2 32.116
+ defaultsideoverlap allm2 metal2 allm5,*mimcap metal5 16.534
 
 # metal5->metal3
- defaultoverlap     allm5 metal5 allm3 metal3 23.122
- defaultsideoverlap allm5 metal5 allm3 metal3 36.971
- defaultsideoverlap allm3 metal3 allm5 metal5 24.785
+ defaultoverlap     allm5,*mimcap metal5 allm3 metal3 23.122
+ defaultsideoverlap allm5,*mimcap metal5 allm3 metal3 36.971
+ defaultsideoverlap allm3 metal3 allm5,*mimcap metal5 24.785
 
 # metal5->metal4
- defaultoverlap     allm5 metal5 allm4 metal4 67.225
- defaultsideoverlap allm5 metal5 allm4 metal4 49.517
- defaultsideoverlap allm4 metal4 allm5 metal5 41.956
+ defaultoverlap     allm5,*mimcap metal5 allm4 metal4 67.225
+ defaultsideoverlap allm5,*mimcap metal5 allm4 metal4 49.517
+ defaultsideoverlap allm4 metal4 allm5,*mimcap metal5 41.956
 
 # topmetal1
  defaultsidewall    allm6 metal6 162.172 0.343
@@ -5112,19 +5131,24 @@ variants (),(hrhc),(lrhc),(hrlc),(lrlc)
 
  # Capacitors
  device csubcircuit cap_cmim *mimcap *m5 w=w l=l
- # Placeholder for SVaricap (for which there is no device model)
- device csubcircuit SVaricap *hvvaractor *hvnsd w=w l=l
+ # Varactor:  Note that the SVaractor is a complex device incorporating
+ # multiple varactor fingers.  This will normally be handled from a
+ # generated cell using a "device" property.  In case varactor structures
+ # are drawn directly into a layout and not through a parameterized cell,
+ # the underlying Verilog-A component type will be extracted, possibly
+ # resulting in a less-accurate simulation.
+ device veriloga sg13_hv_svaricap *hvvaractor *hvnsd w=w l=l
 
  # Diodes
  device subcircuit dpantenna *pdiode nwell w=w l=l
  device msubcircuit dantenna *ndiode pwell,space/w w=w l=l
  device subcircuit schottky *schottky *hvnsd nwell error w=w l=l
 
- # Resistors
+ # Resistors (3-terminal devices)
 
- device rsubcircuit rsil nres *poly w=w l=l
- device rsubcircuit rppd pres *poly w=w l=l
- device rsubcircuit rhigh xres *poly w=w l=l
+ device rsubcircuit rsil nres *poly nwell,pwell,space/w error w=w l=l
+ device rsubcircuit rppd pres *poly nwell,pwell,space/w error w=w l=l
+ device rsubcircuit rhigh xres *poly nwell,pwell,space/w error w=w l=l
 
  # Metal resistors.  There are no device models for these, so they
  # are extracted as ideal (non-semiconductor) resistors.
