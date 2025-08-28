@@ -317,6 +317,21 @@ class DRC::DRCEngine
 end
 
 class DRC::DRCLayer
+    def ext_merged(min_coherence, overlap_count)
+        args = [min_coherence, overlap_count]
+        return DRCLayer::new(@engine, @engine._tcmd(self.data, 0, self.data.class, :merged, *args))
+    end
+
+    def ext_merge(min_coherence, overlap_count)
+        args = [min_coherence, overlap_count]
+        if @engine.is_tiled?
+            self.data = @engine._tcmd(self.data, 0, self.data.class, :merged, *args)
+        else
+            @engine._tcmd(self.data, 0, self.data.class, :merge, *args)
+        end
+        return self
+    end
+
     def ext_and(other)
         self_min_coherence_state = self.data.min_coherence?
         other_min_coherence_state =  other.data.min_coherence?
@@ -446,10 +461,9 @@ class DRC::DRCLayer
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
         if polygons
-            return separation_errors.polygons.merge(true, 0)
-        else
-            return separation_errors
+            separation_errors = separation_errors.polygons.ext_merge(true, 0)
         end
+        return separation_errors
     end
 
     def ext_separation(other,
@@ -511,10 +525,9 @@ class DRC::DRCLayer
         self.data.min_coherence = self_min_coherence_state
         other.data.min_coherence = other_min_coherence_state
         if polygon_output
-            return output_layer.polygons.merge(true, 0)
-        else
-            return output_layer
+            output_layer = output_layer.polygons.ext_merge(true, 0)
         end
+        return output_layer
     end
 
     def ext_not(other)
@@ -622,10 +635,9 @@ class DRC::DRCLayer
         )
         self.data.min_coherence = self_min_coherence_state
         if polygons
-            return space_errors.polygons.merge(true, 0)
-        else
-            return space_errors
+            space_errors = space_errors.polygons.ext_merge(true, 0)
         end
+        return space_errors
     end
 
     def ext_space(value,
@@ -663,10 +675,9 @@ class DRC::DRCLayer
         end
         self.data.min_coherence = self_min_coherence_state
         if polygon_output
-            return output_layer.polygons.merge(true, 0)
-        else
-            return output_layer
+            output_layer = output_layer.polygons.ext_merge(true, 0)
         end
+        return output_layer
     end
 
     def ext_width_at_intersecting_edges(value,
@@ -712,10 +723,9 @@ class DRC::DRCLayer
         )
         self.data.min_coherence = self_min_coherence_state
         if polygons
-            return width_errors.polygons.merge(true, 0)
-        else
-            return width_errors
+            width_errors = width_errors.polygons.ext_merge(true, 0)
         end
+        return width_errors
     end
 
     def ext_width(value,
@@ -752,7 +762,7 @@ class DRC::DRCLayer
                 false)
         end
         if polygon_output
-            output_layer = output_layer.polygons.merge(true, 0)
+            output_layer = output_layer.polygons.ext_merge(true, 0)
         end
         self.data.min_coherence = self_min_coherence_state
         return output_layer
@@ -781,7 +791,7 @@ class DRC::DRCLayer
         if self.is_merged?
           merged_layer = self
         else
-          merged_layer = self.merged(true, 0)
+          merged_layer = self.ext_merged(true, 0)
         end
         origin = 'cc'
         tile_size = nil
