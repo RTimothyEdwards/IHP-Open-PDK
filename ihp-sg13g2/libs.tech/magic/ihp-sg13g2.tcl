@@ -2,10 +2,73 @@
 # Magic/TCL design kit for IHP ihp-sg13g2
 #-----------------------------------------------------
 # Tim Edwards
-# Revision 0.2	ALPHA   2/18/2025
+# Revision 0.2	ALPHA   8/28/2025
 # Currently a work in progress, expected completion
-# date of April 2025.
+# date of January 2026.
 #-----------------------------------------------------
+#
+# Devices in the model files, with notes about
+# implementation as generated devices in magic:
+#
+# Capacitors:
+#
+# cap_cmim	(basic MiM cap, L and W, contact options)
+# cap_rfcmim	(cmim with RF option; draws guard ring under the device, feed width)
+#
+# Diodes:
+#
+# dantenna	(basic n-diode, L and W)
+# dpantenna	(basic p-diode, L and W)
+#
+# Resistors:
+#
+# rsil		(low-R silicided poly resistor, L and W)
+# rppd		(medium-R P+ unsalicided poly resistor, L and W)
+# rhigh		(high-R N- unsalicided poly resistor, L and W)
+#
+# Bipolars:
+#
+# npn13G2	(bipolar, emitter L and W)
+# npn13G2l	(bipolar, emitter L and W)
+# npn13G2v	(bipolar, emitter L and W)
+# pnpMPA	(bipolar, emitter L and W)
+#
+# MOSFETs:
+#
+# sg13_hv_nmos	(mosfet, channel L and W, NF, M, RF option)
+# sg13_hv_pmos	(mosfet, channel L and W, NF, M, RF option)
+# sg13_lv_nmos	(mosfet, channel L and W, NF, M, RF option)
+# sg13_lv_pmos	(mosfet, channel L and W, NF, M, RF option)
+#
+# Varactors:
+#
+# sg13_hv_svaricap (varactor, L and W, M)
+#
+# Fixed-layout devices:
+#
+# diodevdd_2kv	(fixed layout, array options only)
+# diodevdd_4kv	(fixed layout, array options only)
+# diodevss_2kv	(fixed layout, array options only)
+# diodevss_4kv	(fixed layout, array options only)
+# nmoscl_2	(clamp mosfet, fixed layout)
+# nmoscl_4	(clamp mosfet, fixed layout)
+#
+# Miscellaneous:
+#
+# bondpad	(octagon or square, bond or probe, diameter)
+# isobox	(deep nwell area, length and width)
+# inductor	(2-terminal, width, spacing, diameter, windings)
+# balun		(3-terminal, width, spacing, diameter, windings)
+# seal ring	(length and width)
+
+# Devices not part of the device generator:
+# cparasitic	(device model for parasitic capacitance)
+# Rparasitic	(device model for parasitic resistance)
+# npn13G2_5t	(bipolar, emitter L and W, nonphysical 5th terminal)
+# npn13G2l_5t	(bipolar, emitter L and W, nonphysical 5th terminal)
+# npn13G2v_5t	(bipolar, emitter L and W, nonphysical 5th terminal)
+# ptap1		(p-tap contact, treated as resistor device, L and W)
+# ntap1		(n-tap contact, treated as resistor device, L and W)
 
 if {[catch {set TECHPATH $env(PDK_ROOT)}]} {
     set TECHPATH /usr/share/pdk
@@ -117,22 +180,8 @@ proc sg13g2::addtechmenu {framename} {
 	    "magic::gencell sg13g2::rppd" pdk1
    magic::add_toolkit_command $layoutframe "poly resistor - 1360 Ohm/sq" \
 	    "magic::gencell sg13g2::rhigh" pdk1
-   magic::add_toolkit_separator	$layoutframe pdk1
-
-   magic::add_toolkit_command $layoutframe "m1 metal resistor - 115 mOhm/sq" \
+   magic::add_toolkit_command $layoutframe "metal resistor" \
 	    "magic::gencell sg13g2::rm1" pdk1
-   magic::add_toolkit_command $layoutframe "m2 metal resistor - 88 mOhm/sq" \
-	    "magic::gencell sg13g2::rm2" pdk1
-   magic::add_toolkit_command $layoutframe "m3 metal resistor - 88 mOhm/sq" \
-	    "magic::gencell sg13g2::rm3" pdk1
-   magic::add_toolkit_command $layoutframe "m4 metal resistor - 88 mOhm/sq" \
-	    "magic::gencell sg13g2::rm4" pdk1
-   magic::add_toolkit_command $layoutframe "m5 metal resistor - 88 mOhm/sq" \
-	    "magic::gencell sg13g2::rm5" pdk1
-   magic::add_toolkit_command $layoutframe "m6 metal resistor - 18 mOhm/sq" \
-	    "magic::gencell sg13g2::rm6" pdk1
-   magic::add_toolkit_command $layoutframe "m7 metal resistor - 11 mOhm/sq" \
-	    "magic::gencell sg13g2::rm7" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
    magic::add_toolkit_command $layoutframe "MiM cap - 1.5fF/um^2" \
@@ -155,18 +204,30 @@ proc sg13g2::addtechmenu {framename} {
 	    "sg13g2::nwell_draw" pdk1
    magic::add_toolkit_command $layoutframe "n-well region with guard ring (5.0V)" \
 	    "sg13g2::hvnwell_draw" pdk1
-   magic::add_toolkit_command $layoutframe "via1" \
-	    "sg13g2::via1_draw" pdk1
-   magic::add_toolkit_command $layoutframe "via2" \
-	    "sg13g2::via2_draw" pdk1
-   magic::add_toolkit_command $layoutframe "via3" \
-	    "sg13g2::via3_draw" pdk1
-   magic::add_toolkit_command $layoutframe "via4" \
-	    "sg13g2::via4_draw" pdk1
-   magic::add_toolkit_command $layoutframe "via5" \
-	    "sg13g2::via5_draw" pdk1
-   magic::add_toolkit_command $layoutframe "via6" \
-	    "sg13g2::via6_draw" pdk1
+   # magic::add_toolkit_command $layoutframe "via1" \
+   #	    "sg13g2::via1_draw" pdk1
+   # magic::add_toolkit_command $layoutframe "via2" \
+   #	    "sg13g2::via2_draw" pdk1
+   # magic::add_toolkit_command $layoutframe "via3" \
+   #	    "sg13g2::via3_draw" pdk1
+   # magic::add_toolkit_command $layoutframe "via4" \
+   #	    "sg13g2::via4_draw" pdk1
+   # magic::add_toolkit_command $layoutframe "via5" \
+   #	    "sg13g2::via5_draw" pdk1
+   # magic::add_toolkit_command $layoutframe "via6" \
+   #	    "sg13g2::via6_draw" pdk1
+   magic::add_toolkit_command $layoutframe "via stack" \
+	    "magic::gencell sg13g2::via" pdk1
+   magic::add_toolkit_separator	$layoutframe pdk1
+
+   magic::add_toolkit_command $layoutframe "ESD diode" \
+	    "magic::gencell sg13g2::diodevdd_2kv" pdk1
+   magic::add_toolkit_command $layoutframe "nMOS clamp" \
+	    "magic::gencell sg13g2::nmoscl_2" pdk1
+   magic::add_toolkit_separator	$layoutframe pdk1
+
+   magic::add_toolkit_command $layoutframe "Bond pad" \
+	    "magic::gencell sg13g2::bondpad" pdk1
 
    # Additional DRC style for routing only---add this to the DRC menu
    ${layoutframe}.titlebar.mbuttons.drc.toolmenu add command -label "DRC Routing" -command {drc style drc(routing)}
@@ -200,6 +261,379 @@ proc sg13g2::importspice {} {
    if {$Layoutfilename != ""} {
       magic::netlist_to_layout $Layoutfilename sg13g2
    }
+}
+
+#----------------------------------------------------------------
+# Routines for generated vias
+#----------------------------------------------------------------
+
+proc sg13g2::via_defaults {} {
+   return {metalbot metal1 metaltop metal2 nxcuts 1 nycuts 1 \
+	orient default pattern none}
+}
+
+proc sg13g2::via_dialog {parameters} {
+    # Editable fields:     all of them
+    # Special handling:
+    #	cuts can be lists if metaltop - metalbot > 1
+    #	orientation can be a list if non-default
+
+    set sellist {metal1 metal2 metal3 metal4 metal5 metal6}
+    magic::add_selectlist metalbot "Bottom metal" $sellist $parameters metal1
+    set sellist {metal2 metal3 metal4 metal5 metal6 metal7}
+    magic::add_selectlist metaltop "Top metal" $sellist $parameters metal2
+
+    # NOTE: Need to implement custom per-layer orientation
+    set sellist {default inverse horizontal vertical}
+    magic::add_selectlist orient "Orientation" $sellist $parameters default
+
+    # NOTE: "none" just uses a square via area, filled by the algorithm.
+    # To do:  Implement a "checker" pattern
+    set sellist {none offset}
+    magic::add_selectlist pattern "Pattern" $sellist $parameters none
+
+    magic::add_entry nxcuts "Number cuts in X" $parameters
+    magic::add_entry nycuts "Number cuts in Y" $parameters
+}
+
+proc sg13g2::via_convert {parameters} {
+    # Vias do not import from SPICE;  nothing to do.
+}
+
+proc sg13g2::via_check {parameters} {
+    # Numerical sanity checks
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    # nxcuts and nycuts can be arrays of values.  If they are arrays,
+    # then check that each entry in the array is integer, and that
+    # the number of entries matches or exceeds the number of metal
+    # layers selected.  If less, then pad out the list.
+
+    for {set i 0} {$i < [llength $nxcuts]} {incr i} {
+	set nxcut [lindex $nxcuts $i]
+	if {[catch {expr abs($nxcut)}]} {
+	    puts stderr "Number of cuts in X must be numeric!"
+	    set nxcuts [lreplace $nxcuts $i $i 1]
+            dict set parameters nxcuts $nxcuts
+	} elseif {$nxcut < 1} {
+	    puts stderr "Number of cuts in X must be at least 1!"
+	    set nxcuts [lreplace $nxcuts $i $i 1]
+            dict set parameters nxcuts $nxcuts
+	} elseif {[floor $nxcut] != $nxcut} {
+	    puts stderr "Number of cuts in X must be an integer!"
+	    set nxcuts [lreplace $nxcuts $i $i [floor $nxcut]]
+            dict set parameters nxcuts $nxcuts
+	}
+    }
+    for {set i 0} {$i < [llength $nycuts]} {incr i} {
+	set nycut [lindex $nycuts $i]
+	if {[catch {expr abs($nycut)}]} {
+	    puts stderr "Number of cuts in Y must be numeric!"
+	    set nycuts [lreplace $nycuts $i $i 1]
+            dict set parameters nycuts $nycuts
+	} elseif {$nycut < 1} {
+	    puts stderr "Number of cuts in Y must be at least 1!"
+	    set nycuts [lreplace $nycuts $i $i 1]
+            dict set parameters nycuts $nycuts
+	} elseif {[floor $nycut] != $nycut} {
+	    puts stderr "Number of cuts in Y must be an integer!"
+	    set nycuts [lreplace $nycuts $i $i [floor $nycut]]
+            dict set parameters nycuts $nycuts
+	}
+    }
+
+    set metallist {metal1 metal2 metal3 metal4 metal5 metal6 metal7}
+    set mbotidx [lsearch $metallist $metalbot]
+    set mtopidx [lsearch $metallist $metaltop]
+
+    if {$mbotidx < 0} {
+	puts stderr "Invalid bottom metal selection!"
+	set mbotidx 0
+        dict set parameters metalbot metal1
+    }
+    if {$mtopidx < 0} {
+	puts stderr "Invalid top metal selection!"
+	if {$mtopidx == 6} {
+	    set mbotidx 5
+	} else {
+	    set mtopidx [+ $mbotidx 1]
+	}
+        dict set parameters metaltop [lindex $metallist $mtopidx]
+        dict set parameters metalbot [lindex $metallist $mbotidx]
+    }
+    if {$mtopidx <= $mbotidx} {
+	puts stderr "Top metal must be higher than the bottom metal!"
+	if {$mtopidx == 6} {
+	    set mbotidx [- $mtopidx 1]
+	} else {
+	    set mtopidx [+ $mbotidx 1]
+	}
+        dict set parameters metaltop [lindex $metallist $mtopidx]
+        dict set parameters metalbot [lindex $metallist $mbotidx]
+    }
+
+    set numvias [- $mtopidx $mbotidx]
+    set numxcuts [llength $nxcuts]
+    set numycuts [llength $nycuts]
+    if {($numxcuts != 1) && ($numxcuts < $numvias)} {
+	puts stderr "List of cuts in X padded to match metal layer stack."
+	for {set i $numxcuts} {$i < $numvias} {incr i} {
+	    lappend nxcuts [lindex $nxcuts end]
+	}
+	dict set parameters nxcuts $nxcuts
+    }
+    if {($numycuts != 1) && ($numycuts < $numvias)} {
+	puts stderr "List of cuts in Y padded to match metal layer stack."
+	for {set i $numycuts} {$i < $numvias} {incr i} {
+	    lappend nycuts [lindex $nycuts end]
+	}
+	dict set parameters nycuts $nycuts
+    }
+    return $parameters
+}
+
+proc sg13g2::via_draw {parameters} {
+
+    # suspendall
+
+    # Set defaults if they are not in parameters
+    set nxcuts 1
+    set nycuts 2
+    set pattern none
+    set orient default
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    # Local to this routine:  width, spacing, and overlap rules
+    # for each via layer, starting with via1.  Note that via rules
+    # are magic's rules for via areas, not IHP rules for cut layers.
+
+    set metalwidthrule {0.16  0.20  0.20  0.20  0.20  1.64 2.00}
+    set metalarearule  {0.09  0.144 0.144 0.144 0.144 0.0  0.0}
+    set viawidthrule   {0.20  0.20  0.20  0.20  0.62  1.90}
+    set spacingrule    {0.21  0.21  0.21  0.21  0.22  0.06}
+    set b0overlaprule  {0.005 0.0   0.0   0.0   0.0   0.0}
+    set b1overlaprule  {0.045 0.045 0.045 0.045 0.0   0.0}
+    set t0overlaprule  {0.0   0.0   0.0   0.0   0.32  0.0}
+    set t1overlaprule  {0.045 0.045 0.045 0.045 0.32  0.0}
+
+    # These are IHP cut rules and are needed to determine what area
+    # is required for a specific number of cuts.
+    set cutsizerule    {0.19  0.19  0.19  0.19  0.42  0.90}
+    set cutspacerule   {0.22  0.22  0.22  0.22  0.42  1.06}
+    set cutspace2rule  {0.29  0.29  0.29  0.29  0.42  1.06}
+    set cutborderrule  {0.005 0.005 0.005 0.005 0.10  0.50}
+
+    # Convert metalbot and metaltop to array indexes
+    set metallist {metal1 metal2 metal3 metal4 metal5 metal6 metal7}
+    set metalbot [lsearch $metallist $metalbot]
+    set metaltop [lsearch $metallist $metaltop]
+
+    # Expand cuts to cover all layers
+    set numvias [- $metaltop $metalbot]
+    set numlayers [+ $numvias 1]
+    if {[llength $nxcuts] == 1} {
+	set nxcuts [lrepeat 6 $nxcuts]
+    } elseif {[llength $nxcuts] == $numvias} {
+	set allnxcuts {}
+	for {set i 0} {$i < $metalbot} {incr i} {
+	    lappend allnxcuts 1
+	}
+	lappend allnxcuts {*}$nxcuts
+	for {set i $metaltop} {$i < 7} {incr i} {
+	    lappend allnxcuts 1
+	}
+	set nxcuts $allnxcuts
+    }
+
+    if {[llength $nycuts] == 1} {
+	set nycuts [lrepeat 6 $nycuts]
+    } elseif {[llength $nycuts] == $numvias} {
+	set allnycuts {}
+	for {set i 0} {$i < $metalbot} {incr i} {
+	    lappend allnycuts 1
+	}
+	lappend allnycuts {*}$nycuts
+	for {set i $metaltop} {$i < 7} {incr i} {
+	    lappend allnycuts 1
+	}
+	set nycuts $allnycuts
+    }
+
+    if {[llength $orient] == 1} {
+	if {$orient == "default"} {
+	    set orient [lrepeat 4 horizontal vertical]
+	} elseif {$orient == "inverse"} {
+	    set orient [lrepeat 4 vertical horizontal]
+	} else {
+	    set orient [lrepeat 7 $orient]
+	}
+    } elseif {[llength $orient] == $numlayers} {
+	# NOTE:  Custom per-layer orientation is not yet implemented in
+	# the via dialog.
+	set allorient {}
+	for {set i 0} {$i < $metalbot} {incr i} {
+	    lappend allorient default
+	}
+	lappend allorient {*}$orient
+	for {set i $metaltop} {$i < 7} {incr i} {
+	    lappend allorient default
+	}
+	set orient $allorient
+    }
+
+    # For offset patterns, reduce the counts of every other layer by 1
+    # unless the count is only 1.
+    if {$pattern == "offset"} {
+	for {set i [+ $metalbot 1]} {$i <= $metaltop} {incr i 2} {
+	    set lnxcuts [lindex $nxcuts $i]
+	    set lnycuts [lindex $nycuts $i]
+	    if {$lnxcuts > 1} {
+		incr lnxcuts -1
+		set nxcuts [lreplace $nxcuts $i $i $lnxcuts]
+	    }
+	    if {$lnycuts > 1} {
+		incr lnycuts -1
+		set nycuts [lreplace $nycuts $i $i $lnycuts]
+	    }
+	}
+    }
+    
+    # Make sure all layers are represented so that indexing works.
+    set metalwidth [lrepeat 7 0]
+    set metalheight [lrepeat 7 0]
+    set viawidth [lrepeat 6 0]
+    set viaheight [lrepeat 6 0]
+
+    # Compute the via layer area from the border/size/space rules
+    for {set i $metalbot} {$i < $metaltop} {incr i} {
+	set cutsize [lindex $cutsizerule $i]
+	set cutborder [* [lindex $cutborderrule $i] 2]
+	set lnxcuts [lindex $nxcuts $i]
+	set lnycuts [lindex $nycuts $i]
+	if {$lnxcuts > 3} {
+	    set cutspacex [lindex $cutspace2rule $i]
+	} else {
+	    set cutspacex [lindex $cutspacerule $i]
+	}
+	if {$lnycuts > 3} {
+	    set cutspacey [lindex $cutspace2rule $i]
+	} else {
+	    set cutspacey [lindex $cutspacerule $i]
+	}
+
+	set lviawidth [+ [* $lnxcuts $cutsize] [* [- $lnxcuts 1] $cutspacex] $cutborder]
+	set lviaheight [+ [* $lnycuts $cutsize] [* [- $lnycuts 1] $cutspacey] $cutborder]
+
+	set viawidth [lreplace $viawidth $i $i $lviawidth]
+	set viaheight [lreplace $viaheight $i $i $lviaheight]
+    }
+
+    # Determine the surrounding metal area needed on each layer
+    # Do this both for the metal as the bottom layer of the via on top, and
+    # the metal as the top layer of the via underneath.
+
+    for {set i $metalbot} {$i <= $metaltop} {incr i} {
+	set lorient [lindex $orient $i]
+	set twidth 0
+	set theight 0
+	set bwidth 0
+	set bheight 0
+	if {$i > $metalbot} {
+	    # Calculate minimum dimensions of metal surrounding the via below
+	    set narrowoverlap [lindex $t0overlaprule [- $i 1]]
+	    set wideoverlap [lindex $t1overlaprule [- $i 1]]
+	    if {$lorient == "horizontal"} {
+		set toverlapx $wideoverlap
+		set toverlapy $narrowoverlap
+	    } else {
+		set toverlapx $narrowoverlap
+		set toverlapy $wideoverlap
+	    }
+	    # Find the total minimum X and Y extents of metal
+	    set lviawidth [lindex $viawidth [- $i 1]]
+	    set lviaheight [lindex $viaheight [- $i 1]]
+	    set twidth [+ $lviawidth [* 2 $toverlapx]]
+	    set theight [+ $lviaheight [* 2 $toverlapy]]
+	}
+	if {$i < $metaltop} {
+	    # Calculate minimum dimensions of metal surrounding the via above
+	    set narrowoverlap [lindex $b0overlaprule $i]
+	    set wideoverlap [lindex $b1overlaprule $i]
+	    if {$lorient == "horizontal"} {
+		set boverlapx $wideoverlap
+		set boverlapy $narrowoverlap
+	    } else {
+		set boverlapx $narrowoverlap
+		set boverlapy $wideoverlap
+	    }
+	    # Find the total minimum X and Y extents of metal
+	    set lviawidth [lindex $viawidth $i]
+	    set lviaheight [lindex $viaheight $i]
+	    set bwidth [+ $lviawidth [* 2 $boverlapx]]
+	    set bheight [+ $lviaheight [* 2 $boverlapy]]
+	}
+	# Actual width and height are the greater of the two measurements
+	if {$twidth > $bwidth} {set lmetalwidth $twidth} {set lmetalwidth $bwidth}
+	if {$theight > $bheight} {set lmetalheight $theight} {set lmetalheight $bheight}
+	
+	set metalwidth [lreplace $metalwidth $i $i $lmetalwidth]
+	set metalheight [lreplace $metalheight $i $i $lmetalheight]
+    }
+
+    puts stdout "Diagnostic 2:  metalwidth = $metalwidth   metalheight = $metalheight" 
+
+    # For each internal metal, make sure that minimum metal area
+    # rule is satisfied.  It is assumed that the top and bottom layers
+    # of a stack will be routed to, and so do not need to meet the
+    # minimum area requirement within this cell.
+
+    for {set i [+ $metalbot 1]} {$i < $metaltop} {incr i} {
+	set lmetalwidth [lindex $metalwidth $i]
+	set lmetalheight [lindex $metalheight $i]
+	set metalarea [* $lmetalwidth $lmetalheight]
+	set minmetalarea [lindex $metalarearule $i]
+	if {$metalarea < $minmetalarea} {
+	    set lorient [lindex $orient $i]
+	    if {$lorient == "horizontal"} {
+		set lmetalwidth [/ $minmetalarea $lmetalheight]
+		set metalwidth [lreplace $metalwidth $i $i $lmetalwidth]
+	    } else {
+		set lmetalheight [/ $minmetalarea $lmetalwidth]
+		set metalheight [lreplace $metalheight $i $i $lmetalheight]
+	    }
+	}
+    }
+
+    puts stdout "Diagnostic 3:  metalwidth = $metalwidth   metalheight = $metalheight" 
+
+    # For each metal layer, paint the metal and contact
+    snap internal
+    for {set i $metalbot} {$i <= $metaltop} {incr i} {
+	set lmetalwidth [lindex $metalwidth $i]
+	set lmetalheight [lindex $metalheight $i]
+	set hmetalwidth [/ $lmetalwidth 2.0]
+	set hmetalheight [/ $lmetalheight 2.0]
+	box values -${hmetalwidth}um -${hmetalheight}um ${hmetalwidth}um ${hmetalheight}um
+	paint metal[+ $i 1]
+
+	if {$i < $metaltop} {
+	    set lviawidth [lindex $viawidth $i]
+	    set lviaheight [lindex $viaheight $i]
+	    set hviawidth [/ $lviawidth 2.0]
+	    set hviaheight [/ $lviaheight 2.0]
+	    box values -${hviawidth}um -${hviaheight}um ${hviawidth}um ${hviaheight}um
+	    paint via[+ $i 1]
+	}
+    }
+    # resumeall
 }
 
 #----------------------------------------------------------------
@@ -1582,7 +2016,7 @@ proc sg13g2::dantenna_draw {parameters} {
 	    dev_spacing		${diff_spacing} \
 	    dev_surround	${diff_surround} \
 	    end_spacing		${diff_spacing} \
-	    end_surround	0 \
+	    end_surround	${diff_surround} \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
     return [sg13g2::diode_draw $drawdict]
@@ -1598,11 +2032,11 @@ proc sg13g2::dpantenna_draw {parameters} {
     }
 
     set newdict [dict create \
-	    dev_type		ndiodelvt \
-	    dev_contact_type	ndilvtc \
-	    end_type		ppd \
-	    end_contact_type	psc \
-	    end_sub_type	psub \
+	    dev_type		pdiode \
+	    dev_contact_type	pdic \
+	    end_type		nsd \
+	    end_contact_type	nsc \
+	    end_sub_type	nwell \
 	    dev_spacing		${diff_spacing} \
 	    dev_surround	${diff_surround} \
 	    end_spacing		${diff_spacing} \
@@ -1641,9 +2075,20 @@ proc sg13g2::schottky_draw {parameters} {
 #----------------------------------------------------------------
 
 proc sg13g2::cap_cmim_defaults {} {
-    return {w 2.00 l 2.00 val 8.0 carea 2.00 cperi 0.19 class capacitor \
+    return {w 2.00 l 2.00 val 6.0 carea 1.50 cperi 0.19 class capacitor \
+		compatible {cap_cmim cap_rfcmim} \
 		nx 1 ny 1 dummy 0 square 0 lmin 2.00 wmin 2.00 \
-		lmax 30.0 wmax 30.0 dc 0 bconnect 1 tconnect 1 \
+		lmax 30.0 wmax 30.0 dc 0
+		upcontact 0 bconnect 1 tconnect 1 \
+		ccov 100 doports 1}
+}
+
+proc sg13g2::cap_rfcmim_defaults {} {
+    return {w 7.00 l 7.00 val 73.5 carea 1.50 cperi 0.19 class capacitor \
+		compatible {cap_cmim cap_rfcmim} \
+		nx 1 ny 1 dummy 0 square 0 lmin 7.00 wmin 7.00 \
+		lmax 30.0 wmax 30.0 dc 0
+		upcontact 0 bconnect 1 tconnect 1 \
 		ccov 100 doports 1}
 }
 
@@ -1721,6 +2166,10 @@ proc sg13g2::cap_cmim_convert {parameters} {
     return [cap_convert $parameters]
 }
 
+proc sg13g2::cap_rfcmim_convert {parameters} {
+    return [cap_convert $parameters]
+}
+
 #----------------------------------------------------------------
 # capacitor: Interactively specifies the fixed layout parameters
 #----------------------------------------------------------------
@@ -1737,8 +2186,16 @@ proc sg13g2::cap_dialog {device parameters} {
     magic::add_entry nx "X Repeat" $parameters
     magic::add_entry ny "Y Repeat" $parameters
 
+    if {[dict exists $parameters compatible]} {
+	set sellist [dict get $parameters compatible]
+	magic::add_selectlist gencell "Device type" $sellist $parameters $device
+    }
+
     if {[dict exists $parameters square]} {
 	magic::add_checkbox square "Square capacitor" $parameters
+    }
+    if {[dict exists $parameters upcontact]} {
+	magic::add_checkbox upcontact "Create bottom plate contact" $parameters
     }
     if {[dict exists $parameters bconnect]} {
 	magic::add_checkbox bconnect "Connect bottom plates in array" $parameters
@@ -1764,6 +2221,10 @@ proc sg13g2::cap_dialog {device parameters} {
 
 proc sg13g2::cap_cmim_dialog {parameters} {
     sg13g2::cap_dialog cap_cmim $parameters
+}
+
+proc sg13g2::cap_rfcmim_dialog {parameters} {
+    sg13g2::cap_dialog cap_rfcmim $parameters
 }
 
 #----------------------------------------------------------------
@@ -1794,12 +2255,13 @@ proc sg13g2::cap_device {parameters} {
     set cap_surround 0
     set bot_surround 0
     set top_surround 0
-    set end_spacing 0
-    set bconnect 0	    ;# bottom plates are connected in array
-    set cap_spacing 0	    ;# cap spacing in array
-    set top_metal_space 0   ;# top metal spacing (if larger than cap spacing)
-    set top_metal_width 0   ;# top metal minimum width
-    set contact_size 0	    ;# cap contact minimum size
+    set top_spacing 0
+    set upcontact 0	;# create bottom plate contact (disabled)
+    set bconnect 0	;# bottom plates are connected in array (disabled)
+    set cap_spacing 0	;# cap spacing in array
+    set top_space 0   	;# top metal spacing (if larger than cap spacing)
+    set top_width 0   	;# top metal minimum width
+    set top_contact_size 0  ;# cap contact minimum size
     set ccov 100	    ;# amount of contact coverage
 
     set term_t ""
@@ -1810,8 +2272,8 @@ proc sg13g2::cap_device {parameters} {
         set $key [dict get $parameters $key]
     }
 
-    if {![dict exists $parameters top_metal_space]} {
-	set top_metal_space $metal_spacing
+    if {![dict exists $parameters top_space]} {
+	set top_space $metal_spacing
     }
 
     # Draw the device
@@ -1832,8 +2294,10 @@ proc sg13g2::cap_device {parameters} {
     set cmaxw [- $w [* $cap_surround 2]]
     set cw [* $cmaxw [/ [expr abs($ccov)] 100.0]]
     # Contact width must meet minimum
-    if {$cw < $contact_size} {set cw $contact_size}
-    if {$cw < $top_metal_width} {set cw $top_metal_width}
+    if {$cw < $top_contact_size} {set cw $top_contact_size}
+    # Max contact width must also meet minimum
+    if {$cmaxw < $top_contact_size} {set cmaxw $top_contact_size}
+
     # Difference between maximum contact width and actual contact width
     set cdif [- $cmaxw $cw]
 
@@ -1860,8 +2324,28 @@ proc sg13g2::cap_device {parameters} {
     box grow s ${top_surround}um
     box grow e ${top_surround}um
     box grow w ${top_surround}um
+
+    # If the contact size does not meet the minimum top metal
+    # width requirement, then add more top metal.
+    set cext [sg13g2::getbox]
+    set cwid [- [lindex $cext 2] [lindex $cext 0]]
+    set chgt [- [lindex $cext 3] [lindex $cext 1]]
+    if {$cwid < $top_width} {
+	set cdif [- $top_width $cwid]
+	set hcwid [/ $cdif 2.0]
+	box grow e ${hcwid}um
+	box grow w ${hcwid}um
+    }
+    if {$chgt < $top_width} {
+	set cdif [- $top_width $chgt]
+	set hchgt [/ $cdif 2.0]
+	box grow n ${hchgt}um
+	box grow s ${hchgt}um
+    }
+
     paint ${top_type}
     set cext [sg13g2::getbox]
+    puts stdout "Diagnostic:  cext is $cext"
     popbox
     popbox
     pushbox
@@ -1877,57 +2361,61 @@ proc sg13g2::cap_device {parameters} {
 
     # Calculate the distance from the top metal on the cap contact
     # to the top metal on the end contact.
-    set top_met_sep [+ $end_spacing [- $cdif $top_surround]]
+    set top_met_sep [+ $top_spacing [- $cdif $top_surround]]
 
     # Diagnostic!
     # puts stdout "cdif = $cdif"
     # puts stdout "top_met_sep = $top_met_sep"
 
     # Increase end spacing if top metal spacing rule is not met
-    set loc_end_spacing $end_spacing
-    if {$top_met_sep < $top_metal_space} {
-	set loc_end_spacing [+ $loc_end_spacing [- $top_metal_space $top_met_sep]]
+    set loc_top_spacing $top_spacing
+    if {$top_met_sep < $top_space} {
+	set loc_top_spacing [+ $loc_top_spacing [- $top_space $top_met_sep]]
     }
     # Diagnostic!
-    # puts stdout "loc_end_spacing = $loc_end_spacing"
+    # puts stdout "loc_top_spacing = $loc_top_spacing"
 
-    # Extend bottom metal under contact to right
-    box grow e ${loc_end_spacing}um
-    set chw [/ ${contact_size} 2.0]
-    box grow e ${chw}um
-    box grow e ${end_surround}um
-    paint ${bot_type}
+    if {$upcontact == 1} {
+	# Extend bottom metal under contact to right
+	box grow e ${loc_top_spacing}um
+	set chw [/ ${top_contact_size} 2.0]
+	box grow e ${chw}um
+	box grow e ${end_surround}um
+	paint ${bot_type}
+    }
 
     popbox
     popbox
 
-    # Draw contact to right.  Reduce contact extent if devices are not
-    # wired together and the top metal spacing rule limits the distance
-    set lcont $l
-    if {($bconnect == 0) && ($ny > 1)} {
-	if {$cap_spacing < $top_metal_space} {
-	    set cspace [- $top_metal_space $cap_spacing]
-	    set lcont [- $l $cspace]
+    if {$upcontact == 1} {
+	# Draw contact to right.  Reduce contact extent if devices are not
+	# wired together and the top metal spacing rule limits the distance
+	set lcont $l
+	if {($bconnect == 0) && ($ny > 1)} {
+	    if {$cap_spacing < $top_space} {
+		set cspace [- $top_space $cap_spacing]
+		set lcont [- $l $cspace]
+	    }
 	}
-    }
 
-    pushbox
-    box move e ${hw}um
-    box move e ${bot_surround}um
-    box move e ${loc_end_spacing}um
-    set cl [- [+ ${lcont} [* ${bot_surround} 2.0]] [* ${end_surround} 2.0]]
-    set cl [- ${cl} ${metal_surround}]  ;# see below
-    set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cl} \
+	pushbox
+	box move e ${hw}um
+	box move e ${bot_surround}um
+	box move e ${loc_top_spacing}um
+	set cl [- [+ ${lcont} [* ${bot_surround} 2.0]] [* ${end_surround} 2.0]]
+	set cl [- ${cl} ${metal_surround}]  ;# see below
+	set cext [sg13g2::unionbox $cext [sg13g2::draw_contact 0 ${cl} \
 		${end_surround} ${metal_surround} \
-		${contact_size} ${bot_type} ${top_contact_type} \
+		${top_contact_size} ${bot_type} ${top_contact_type} \
 		${top_type} full]]
-    # Bottom plate port label
-    if {$term_b != ""} {
-	label $term_b c $bot_type
-	select area label
-	port make
+	# Bottom plate port label
+	if {$term_b != ""} {
+	    label $term_b c $bot_type
+	    select area label
+	    port make
+	}
+	popbox
     }
-    popbox
     popbox
 
     # Top plate port label
@@ -1960,10 +2448,11 @@ proc sg13g2::cap_draw {parameters} {
     set cap_diff_spacing 0
     set wide_cap_spacing 0  ;# additional spacing for wide metal rule
     set wide_cap_width 0
-    set end_spacing 0
+    set top_spacing 0
     set end_surround 0
     set bot_surround 0
-    set top_metal_width 0
+    set top_width 0
+    set end_spacing 0
     set bconnect 0	;# connect bottom plates in array
     set tconnect 0	;# connect top plates in array
     set top_type ""
@@ -2012,7 +2501,7 @@ proc sg13g2::cap_draw {parameters} {
         # overlap at end contact
         set dy [- $fh [+ $end_surround $end_surround $contact_size]]
     }
-    # Contact is placed on right so spacing is determined by end_spacing.
+    # Contact is placed on right so spacing is determined by top_spacing.
     set dx [+ $fw $end_spacing $dwide]
 
     # Determine core width and height
@@ -2024,16 +2513,36 @@ proc sg13g2::cap_draw {parameters} {
     if {$guard != 0} {
 	# Calculate guard ring size (measured to contact center)
 	set gx [+ $corex [* 2.0 [+ $cap_diff_spacing $diff_surround]] $contact_size]
-	set gy [+ $corey [* 2.0 [+ $end_spacing $diff_surround]] $contact_size]
+	set gy [+ $corey [* 2.0 [+ $cap_diff_spacing $diff_surround]] $contact_size]
 
 	# Draw the guard ring first.
 	if {$doports} {dict set parameters bulk B}
 	sg13g2::guard_ring $gx $gy $parameters
+
+	# NOTE: A guard ring under a MiM cap implies an RF device.
+	# The RF MiM cap uses PWELLBLK inside the guard ring area.
+	# PWELLBLK is not a drawn layer but can be created with a
+	# mask hint.  Put 0.6um space between PWELLBLK and the ring.
+	set gedgex [+ $corex [* 2.0 [+ $cap_diff_spacing]]]
+	set gedgey [+ $corey [* 2.0 [+ $cap_diff_spacing]]]
+	set hgx [- [/ $gedgex 2.0] 0.6]
+	set hgy [- [/ $gedgey 2.0] 0.6]
+	set guardbox {}
+	lappend guardbox [magic::u2i -$hgx]
+	lappend guardbox [magic::u2i -$hgy]
+	lappend guardbox [magic::u2i $hgx]
+	lappend guardbox [magic::u2i $hgy]
+	property MASKHINTS_PWELLBLK "$guardbox"
+	# Erase pwell from this area
+	pushbox
+	box values {*}$guardbox
+	erase pwell
+	popbox
     }
 
     set twidth [+ ${contact_size} ${end_surround} ${end_surround}]
-    if {${twidth} < ${top_metal_width}} {
-	set twidth ${top_metal_width}
+    if {${twidth} < ${top_width}} {
+	set twidth ${top_width}
     }
     set hmw [/ $twidth 2.0]
     set hdy [/ $dy 2.0]
@@ -2113,19 +2622,47 @@ proc sg13g2::cap_draw {parameters} {
 
 proc sg13g2::cap_cmim_draw {parameters} {
     set newdict [dict create \
-	    top_type 		m4 \
-	    top_contact_type	via3 \
+	    top_type 		m6 \
+	    top_contact_type	via5 \
 	    cap_type 		mimcap \
 	    cap_contact_type	mimcc \
-	    bot_type 		m3 \
-	    bot_surround	0.2 \
+	    bot_type 		m5 \
+	    bot_surround	0.6 \
 	    cap_spacing		1.2 \
 	    cap_surround	0.2 \
-	    top_surround	0.005 \
+	    top_surround	0.0 \
 	    end_surround	0.1 \
-	    end_spacing		1.2 \
-	    contact_size	0.32 \
-	    metal_surround	0.08 \
+	    metal_surround	0.32 \
+	    top_contact_size    0.62 \
+	    bot_width           0.20 \
+	    bot_spacing         0.21 \
+	    top_width           1.64 \
+	    top_spacing         1.64 \
+    ]
+    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
+    return [sg13g2::cap_draw $drawdict]
+}
+
+proc sg13g2::cap_rfcmim_draw {parameters} {
+    set newdict [dict create \
+	    guard		1 \
+	    top_type 		m6 \
+	    top_contact_type	via5 \
+	    cap_type 		mimcap \
+	    cap_contact_type	mimcc \
+	    bot_type 		m5 \
+	    bot_surround	0.6 \
+	    cap_spacing		1.2 \
+	    cap_surround	0.2 \
+	    top_surround	0.0 \
+	    end_surround	0.1 \
+	    metal_surround	0.32 \
+	    top_contact_size    0.62 \
+	    bot_width           0.20 \
+	    bot_spacing         0.21 \
+	    top_width           1.64 \
+	    top_spacing         1.64 \
+	    cap_diff_spacing	3.00 \
     ]
     set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
     return [sg13g2::cap_draw $drawdict]
@@ -2215,6 +2752,10 @@ proc sg13g2::cap_cmim_check {parameters} {
     return [sg13g2::cap_check $parameters]
 }
 
+proc sg13g2::cap_rfcmim_check {parameters} {
+    return [sg13g2::cap_check $parameters]
+}
+
 #----------------------------------------------------------------
 # Drawn resistors
 #----------------------------------------------------------------
@@ -2283,42 +2824,49 @@ proc sg13g2::rhigh_defaults {} {
 
 proc sg13g2::rm1_defaults {} {
     return {w 0.160 l 0.100 m 1 nx 1 wmin 0.16 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.110 val 0.069 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
 
 proc sg13g2::rm2_defaults {} {
     return {w 0.200 l 0.100 m 1 nx 1 wmin 0.20 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.088 val 0.044 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
 
 proc sg13g2::rm3_defaults {} {
     return {w 0.200 l 0.100 m 1 nx 1 wmin 0.20 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.088 val 0.044 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
 
 proc sg13g2::rm4_defaults {} {
     return {w 0.200 l 0.100 m 1 nx 1 wmin 0.20 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.088 val 0.044 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
 
 proc sg13g2::rm5_defaults {} {
     return {w 0.200 l 0.100 m 1 nx 1 wmin 0.20 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.088 val 0.044 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
 
 proc sg13g2::rm6_defaults {} {
     return {w 1.640 l 0.100 m 1 nx 1 wmin 1.64 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.018 val 0.001098 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
 
 proc sg13g2::rm7_defaults {} {
     return {w 2.000 l 0.100 m 1 nx 1 wmin 2.00 lmin 0.005 class resistor \
+		compatible {rm1 rm2 rm3 rm4 rm5 rm6 rm7} \
 		rho 0.011 val 0.00055 dummy 0 dw 0.0 term 0.0 \
 		roverlap 0 doports 1}
 }
@@ -3208,7 +3756,7 @@ proc sg13g2::rppd_draw {parameters} {
 
     set newdict [dict create \
 	    res_type		pres \
-	    end_type 		pc \
+	    end_type 		poly \
 	    end_contact_type	pc \
 	    plus_diff_type	$gdifftype \
 	    plus_contact_type	$gdiffcont \
@@ -3218,7 +3766,7 @@ proc sg13g2::rppd_draw {parameters} {
 	    end_spacing		$gresdiff_end \
 	    end_to_end_space	0.52 \
 	    res_to_cont		0.575 \
-	    res_to_endcont	0.2 \
+	    res_to_endcont	0.28 \
 	    res_spacing		0.48 \
 	    res_diff_spacing	$gresdiff_spacing \
 	    mask_clearance	0.5 \
@@ -3280,7 +3828,7 @@ proc sg13g2::rhigh_draw {parameters} {
 
     set newdict [dict create \
 	    res_type		xres \
-	    end_type 		pc \
+	    end_type 		poly \
 	    end_contact_type	pc \
 	    plus_diff_type	$gdifftype \
 	    plus_contact_type	$gdiffcont \
@@ -3290,7 +3838,7 @@ proc sg13g2::rhigh_draw {parameters} {
 	    end_spacing		$gresdiff_end \
 	    end_to_end_space	0.52 \
 	    res_to_cont		0.575 \
-	    res_to_endcont	0.2 \
+	    res_to_endcont	0.28 \
 	    res_spacing		0.48 \
 	    res_diff_spacing	$gresdiff_spacing \
 	    mask_clearance	0.52 \
@@ -3689,7 +4237,7 @@ proc sg13g2::sg13_lv_nmos_defaults {} {
     return {w 0.15 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
-		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
+		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0 doports 1}
 }
@@ -3698,27 +4246,7 @@ proc sg13g2::sg13_hv_nmos_defaults {} {
     return {w 0.15 l 0.45 m 1 nf 1 diffcov 100 polycov 100 \
 		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
 		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.45 wmin 0.15 \
-		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0 doports 1}
-}
-
-proc sg13g2::nmosi_defaults {} {
-    return {w 0.15 l 0.13 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.13 wmin 0.15 \
-		class mosfet \
-		compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
-		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
-		viagb 0 viagr 0 viagl 0 viagt 0 doports 1}
-}
-
-proc sg13g2::nmosiHV_defaults {} {
-    return {w 0.15 l 0.45 m 1 nf 1 diffcov 100 polycov 100 \
-		guard 1 glc 1 grc 1 gtc 1 gbc 1 tbcov 100 rlcov 100 \
-		topc 1 botc 1 poverlap 0 doverlap 1 lmin 0.45 wmin 0.15 \
-		class mosfet \
-		compatible {sg13_lv_nmos sg13_hv_nmos nmosi nmosiHV} \
+		class mosfet compatible {sg13_lv_nmos sg13_hv_nmos} \
 		full_metal 1 viasrc 100 viadrn 100 viagate 100 \
 		viagb 0 viagr 0 viagl 0 viagt 0 doports 1}
 }
@@ -3784,14 +4312,6 @@ proc sg13g2::sg13_hv_pmos_convert {parameters} {
 }
 
 proc sg13g2::sg13_lv_pmos_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::nmosi_convert {parameters} {
-    return [sg13g2::mos_convert $parameters]
-}
-
-proc sg13g2::nmosiHV_convert {parameters} {
     return [sg13g2::mos_convert $parameters]
 }
 
@@ -3871,14 +4391,6 @@ proc sg13g2::sg13_lv_pmos_dialog {parameters} {
 
 proc sg13g2::sg13_hv_nmos_dialog {parameters} {
     sg13g2::mos_dialog sg13_hv_nmos $parameters
-}
-
-proc sg13g2::nmosi_dialog {parameters} {
-    sg13g2::mos_dialog nmosi $parameters
-}
-
-proc sg13g2::nmosiHV_dialog {parameters} {
-    sg13g2::mos_dialog nmosiHV $parameters
 }
 
 #----------------------------------------------------------------
@@ -5053,42 +5565,6 @@ proc sg13g2::sg13_hv_nmos_draw {parameters} {
     return [sg13g2::mos_draw $drawdict]
 }
 
-proc sg13g2::nmosiHV_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		hvnnfet \
-	    diff_type 		hvndiff \
-	    diff_contact_type	hvndc \
-	    plus_diff_type	hvpsd \
-	    plus_contact_type	hvpsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    diff_spacing	0.30 \
-	    diff_tap_space	0.38 \
-	    diff_gate_space	0.38 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
-proc sg13g2::nmosi_draw {parameters} {
-    set newdict [dict create \
-	    gate_type		nnfet \
-	    diff_type 		hvndiff \
-	    diff_contact_type	hvndc \
-	    plus_diff_type	hvpsd \
-	    plus_contact_type	hvpsc \
-	    poly_type		poly \
-	    poly_contact_type	pc \
-	    sub_type		psub \
-	    diff_spacing	0.30 \
-	    diff_tap_space	0.38 \
-	    diff_gate_space	0.38 \
-    ]
-    set drawdict [dict merge $sg13g2::ruleset $newdict $parameters]
-    return [sg13g2::mos_draw $drawdict]
-}
-
 #----------------------------------------------------------------
 # MOSFET: Check device parameters for out-of-bounds values
 #----------------------------------------------------------------
@@ -5267,14 +5743,6 @@ proc sg13g2::sg13_hv_nmos_check {parameters} {
    return [sg13g2::mos_check sg13_hv_nmos $parameters]
 }
 
-proc sg13g2::nmosHV_check {parameters} {
-   return [sg13g2::mos_check nmosHV $parameters]
-}
-
-proc sg13g2::nmosi_check {parameters} {
-   return [sg13g2::mos_check nmosi $parameters]
-}
-
 proc sg13g2::sg13_lv_pmos_check {parameters} {
    return [sg13g2::mos_check sg13_lv_pmos $parameters]
 }
@@ -5284,36 +5752,19 @@ proc sg13g2::sg13_hv_pmos_check {parameters} {
 }
 
 #----------------------------------------------------------------
-# Fixed device: Specify all user-editable default values
-#
-# deltax --- Additional horizontal space between devices
-# deltay --- Additional vertical space between devices
-# nx     --- Number of arrayed devices in X
-# ny     --- Number of arrayed devices in Y
-#
-# Note that these values, specifically nx, ny, deltax,
-# and deltay, are properties of the instance, not the cell.
-# They translate to the instance array x and y counts;  while
-# deltax is the x pitch less the cell width, and deltay is the
-# y pitch less the cell height.
-#
-# non-user-editable
-#
-# nocell --- Indicates that this cell has a predefined layout
-#	     and therefore there is no cell to draw.
-# xstep  --- Width of the cell (nominal array pitch in X)
-# ystep  --- Height of the cell (nominal array pitch in Y)
-#----------------------------------------------------------------
-
-# Fixed-layout devices (from sg13g2_fd_pr library)
-#
 # Bipolar transistors:
+# Starting by copying "fixed device" routines and picking the
+# example file from sg13g2_pr.  To be done:  Create callback
+# routines for the bipolar devices.  Given the difference in
+# layout, each one will likely have its own set of drawing
+# routines, although they may share the other callbacks.
 #
 # npn13g2
 # npn13g2l
 # npn13g2v
 # pnpMPA
-#
+#----------------------------------------------------------------
+
 proc sg13g2::npn13g2_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 xstep 7.03 ystep 7.03 class bjt}
 }
@@ -5330,10 +5781,10 @@ proc sg13g2::pnpMPA_defaults {} {
 }
 
 #----------------------------------------------------------------
-# Fixed device: Conversion from SPICE netlist parameters to toolkit
+# Bipolar device: Conversion from SPICE netlist parameters to toolkit
 #----------------------------------------------------------------
 
-proc sg13g2::fixed_convert {parameters} {
+proc sg13g2::bipolar_convert {parameters} {
     set pdkparams [dict create]
     dict for {key value} $parameters {
 	switch -nocase $key {
@@ -5352,26 +5803,26 @@ proc sg13g2::fixed_convert {parameters} {
 #----------------------------------------------------------------
 
 proc sg13g2::npn13g2_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
+    return [sg13g2::bipolar_convert $parameters]
 }
 
 proc sg13g2::npn13g2l_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
+    return [sg13g2::bipolar_convert $parameters]
 }
 
 proc sg13g2::npn13g2v_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
+    return [sg13g2::bipolar_convert $parameters]
 }
 
 proc sg13g2::pnpMPA_convert {parameters} {
-    return [sg13g2::fixed_convert $parameters]
+    return [sg13g2::bipolar_convert $parameters]
 }
 
 #----------------------------------------------------------------
-# Fixed device: Interactively specifies the fixed layout parameters
+# Bipolar device: Interactively specifies the fixed layout parameters
 #----------------------------------------------------------------
 
-proc sg13g2::fixed_dialog {parameters} {
+proc sg13g2::bipolar_dialog {parameters} {
     # Instance fields:	    nx, ny, pitchx, pitchy
     # Editable fields:	    nx, ny, deltax, deltay
     # Non-editable fields:  nocell, xstep, ystep
@@ -5411,19 +5862,578 @@ proc sg13g2::fixed_dialog {parameters} {
 }
 
 proc sg13g2::npn13g2_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
+    sg13g2::bipolar_dialog $parameters
 }
 
 proc sg13g2::npn13g2l_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
+    sg13g2::bipolar_dialog $parameters
 }
 
 proc sg13g2::npn13g2v_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
+    sg13g2::bipolar_dialog $parameters
 }
 
 proc sg13g2::pnpMPA_dialog {parameters} {
-    sg13g2::fixed_dialog $parameters
+    sg13g2::bipolar_dialog $parameters
+}
+
+#----------------------------------------------------------------
+# Bipolar device: Draw the device
+#----------------------------------------------------------------
+
+proc sg13g2::bipolar_draw {devname parameters} {
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    # This cell declares "nocell" in parameters, so it needs to
+    # instance the cell and set properties.
+
+    # Instantiate the cell.  The name corresponds to the cell in the sg13g2_fd_pr_* directory.
+    set instname [getcell ${devname}]
+
+    set deltax [magic::spice2float $deltax] 
+    set deltay [magic::spice2float $deltay] 
+    set xstep [magic::spice2float $xstep] 
+    set ystep [magic::spice2float $ystep] 
+
+    # Array stepping
+    if {$nx > 1 || $ny > 1} {
+        set xstep [expr $xstep + $deltax]
+        set ystep [expr $ystep + $deltay]
+        box size ${xstep}um ${ystep}um
+	array $nx $ny
+    }
+    select cell $instname
+    expand
+    return $instname
+}
+
+#----------------------------------------------------------------
+# No additional parameters declared for drawing
+#----------------------------------------------------------------
+
+proc sg13g2::npn13g2_draw {parameters} {
+    return [sg13g2::bipolar_draw npn13g2 $parameters]
+}
+
+proc sg13g2::npn13g2l_draw {parameters} {
+    return [sg13g2::bipolar_draw npn13g2l $parameters]
+}
+
+proc sg13g2::npn13g2v_draw {parameters} {
+    return [sg13g2::bipolar_draw npn13g2v $parameters]
+}
+
+proc sg13g2::pnpMPA_draw {parameters} {
+    return [sg13g2::bipolar_draw pnpMPA $parameters]
+}
+
+#----------------------------------------------------------------
+# Bipolar device: Check device parameters for out-of-bounds values
+#----------------------------------------------------------------
+
+proc sg13g2::bipolar_check {parameters} {
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    # Normalize distance units to microns
+    set deltax [magic::spice2float $deltax -1] 
+    set deltax [magic::3digitpastdecimal $deltax]
+    set deltay [magic::spice2float $deltay -1] 
+    set deltay [magic::3digitpastdecimal $deltay]
+
+    # nx, ny must be integer
+    if {![string is int $nx]} {
+	puts stderr "NX must be an integer!"
+        dict set parameters nx 1
+    }
+    if {![string is int $ny]} {
+	puts stderr "NY must be an integer!"
+        dict set parameters nx 1
+    }
+
+    # Number of devices in X and Y must be at least 1
+    if {$nx < 1} {
+	puts stderr "NX must be >= 1"
+        dict set parameters nx 1
+    }
+    if {$ny < 1} {
+	puts stderr "NY must be >= 1"
+        dict set parameters nx 1
+    }
+    # Step less than zero violates DRC
+    if {$deltax < 0} {
+	puts stderr "X step must be >= 0"
+        dict set parameters deltax 0
+    }
+    if {$deltay < 0} {
+	puts stderr "Y step must be >= 0"
+        dict set parameters deltay 0
+    }
+    return $parameters
+}
+
+#----------------------------------------------------------------
+
+proc sg13g2::npn13g2_check {parameters} {
+    return [sg13g2::bipolar_check $parameters]
+}
+
+proc sg13g2::npn13g2l_check {parameters} {
+    return [sg13g2::bipolar_check $parameters]
+}
+
+proc sg13g2::npn13g2v_check {parameters} {
+    return [sg13g2::bipolar_check $parameters]
+}
+
+proc sg13g2::pnpMPA_check {parameters} {
+    return [sg13g2::bipolar_check $parameters]
+}
+
+#----------------------------------------------------------------
+# Bond pad device (special drawing routine)
+#----------------------------------------------------------------
+
+proc sg13g2::bondpad_defaults {} {
+    return {height 80 width 80 depth 5 class special shape octagon}
+}
+
+proc sg13g2::bondpad_convert {parameters} {
+    set pdkparams [dict create]
+    dict for {key value} $parameters {
+	switch -nocase $key {
+	    size {
+		dict set pdkparams width $value
+		dict set pdkparams height $value
+	    }
+	    default {
+		# Allow unrecognized parameters to be passed unmodified
+		dict set pdkparams $key $value
+	    }
+	}
+    }
+    return $pdkparams
+}
+
+proc sg13g2::bondpad_dialog {parameters} {
+    # Instance fields:	    width, height, depth, shape
+    # Editable fields:	    width, height, depth, shape
+    # Non-editable fields:  
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    magic::add_entry width "W" $parameters
+    magic::add_entry height "H" $parameters
+    magic::add_entry depth "Number metals" $parameters
+    set sellist {octagon square circle}
+    magic::add_selectlist shape "Shape" $sellist $parameters octagon
+}
+
+# To be completed:  Needs to resolve round-off errors to preserve 45
+# degree angles, and needs contacts to lower metals.
+
+proc sg13g2::bondpad_draw {parameters} {
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    # Set defaults if they are not in parameters
+    set shape	octagon	;# Draw an octagon shape
+    set depth	3	;# Use three metal layers for the pad
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    pushbox
+    box values 0 0 0 0
+
+    # Calculate pad polygons by drawing a circle of N points, where
+    # N is 4 for a square, 8 for an octagon, and we will arbitrarily
+    # set N to 24 for a circle.  The polygon will assume that W = L,
+    # and points will be adjusted to make up the difference.
+
+    if {$shape == "octagon"} {
+	set npoints 8
+    } elseif {$shape == "circle"} {
+	# Note that this will violate DRC rules.
+	set npoints 24
+    } else {
+	set npoints 4
+    }
+
+    if {$width < $height} {set minside $width} else {set minside $height}
+    set pwidth [- $minside 4.2]		;# passivation cut layer width
+    set mcenter [- $minside 4.0]	;# metal (< 7) centerline
+
+    set angle [/ 180.0 $npoints]
+    set adelta [/ 360.0 $npoints]
+    set pi 3.1415926
+    set rad [/ [* $angle $pi] 180]
+    set rdelta [/ [* $adelta $pi] 180]
+
+    # Expand width so that the flats of the polygon reach the value of "minside"
+    set rwidth [/ [/ $minside 2] [cos $rad]]
+    set pwidth [/ [/ $pwidth 2] [cos $rad]]
+    set mcenter [/ [/ $mcenter 2] [cos $rad]]
+
+    set metal_edge {}	;# outside edge of pad metal
+    set pad_edge {}	;# outside edge of passivation cut
+    set metal_center {}	;# centerline of lower metals
+
+    # Compute point at angle 0 for the wire endpoints, so that the
+    # wire starts and ends on a straight edge.
+    set x [- [/ $minside 2.0] 2.0]
+    set y 0.0
+    set ux [magic::i2u [magic::magceil [magic::u2i $x]]]
+    set uy [magic::i2u [magic::magceil [magic::u2i $y]]]
+    if {$width > $minside} {
+	if {$ux > 0} {
+	    set ux [+ $ux [/ [- $width $minside] 2.0]]
+	} else {
+	    set ux [- $ux [/ [- $width $minside] 2.0]]
+	}
+    }
+    lappend metal_center ${ux}um ${uy}um
+
+    for {set i 0} {$i < $npoints} {incr i} {
+        set x [* $rwidth [cos $rad]]
+        set y [* $rwidth [sin $rad]]
+        set ux [magic::i2u [magic::magceil [magic::u2i $x]]]
+        set uy [magic::i2u [magic::magceil [magic::u2i $y]]]
+        if {$width > $minside} {
+	    if {$ux > 0} {
+		set ux [+ $ux [/ [- $width $minside] 2.0]]
+	    } else {
+		set ux [- $ux [/ [- $width $minside] 2.0]]
+	    }
+	}
+	if {$height > $minside} {
+	    if {$uy > 0} {
+		set uy [+ $uy [/ [- $height $minside] 2.0]]
+	    } else {
+		set uy [- $uy [/ [- $height $minside] 2.0]]
+	    }
+	}
+	lappend metal_edge ${ux}um ${uy}um
+
+	set x [* $pwidth [cos $rad]]
+	set y [* $pwidth [sin $rad]]
+	set ux [magic::i2u [magic::magceil [magic::u2i $x]]]
+	set uy [magic::i2u [magic::magceil [magic::u2i $y]]]
+        if {$width > $minside} {
+	    if {$ux > 0} {
+		set ux [+ $ux [/ [- $width $minside] 2.0]]
+	    } else {
+		set ux [- $ux [/ [- $width $minside] 2.0]]
+	    }
+	}
+	if {$height > $minside} {
+	    if {$uy > 0} {
+		set uy [+ $uy [/ [- $height $minside] 2.0]]
+	    } else {
+		set uy [- $uy [/ [- $height $minside] 2.0]]
+	    }
+	}
+	lappend pad_edge ${ux}um ${uy}um
+
+	set x [* $mcenter [cos $rad]]
+	set y [* $mcenter [sin $rad]]
+	set ux [magic::i2u [magic::magfloor [magic::u2i $x]]]
+	set uy [magic::i2u [magic::magfloor [magic::u2i $y]]]
+        if {$width > $minside} {
+	    if {$ux > 0} {
+		set ux [+ $ux [/ [- $width $minside] 2.0]]
+	    } else {
+		set ux [- $ux [/ [- $width $minside] 2.0]]
+	    }
+	}
+	if {$height > $minside} {
+	    if {$uy > 0} {
+		set uy [+ $uy [/ [- $height $minside] 2.0]]
+	    } else {
+		set uy [- $uy [/ [- $height $minside] 2.0]]
+	    }
+	}
+	lappend metal_center ${ux}um ${uy}um
+
+	set angle [+ $angle $adelta]
+	set rad [+ $rad $rdelta]
+    }
+
+    # Repeat the first coordinate pair at the end of metal_center
+    lappend metal_center {*}[lrange $metal_center 0 1]
+
+    # Diagnostic
+    puts stdout "metal_edge = $metal_edge"
+    puts stdout "pad_edge = $pad_edge"
+    puts stdout "metal_center = $metal_center"
+
+    # Create polygons
+    polygon metal7 {*}$metal_edge
+    polygon pad {*}$pad_edge
+
+    # Create lower metals as wires 4um wide, matching the outer
+    # edge of the pad metal.
+    if {$depth > 1} {wire segment metal6 4um {*}$metal_center}
+    if {$depth > 2} {wire segment metal5 4um {*}$metal_center}
+    if {$depth > 3} {wire segment metal4 4um {*}$metal_center}
+    if {$depth > 4} {wire segment metal3 4um {*}$metal_center}
+    if {$depth > 5} {wire segment metal2 4um {*}$metal_center}
+    if {$depth > 6} {wire segment metal1 4um {*}$metal_center}
+
+    popbox
+
+    snap $savesnap
+    tech revert
+}
+
+#----------------------------------------------------------------
+# Bondpad device: Check device parameters for out-of-bounds values
+#----------------------------------------------------------------
+
+proc sg13g2::bondpad_check {parameters} {
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    # Metal depth must be 1 to 7
+    if {$depth < 1} {
+	puts stderr "depth must be >= 1"
+        dict set parameters depth 1
+    }
+    if {$depth > 7} {
+	puts stderr "depth must be <= 7"
+        dict set parameters depth 7
+    }
+
+    # Min/Max passivation layer recommended dimensions are 30 and 150.
+    # The pad is measured according to the metal layer dimension, where
+    # the metal overlaps passivation cut by 2.1um, so add 4.2 to these.
+    if {$width < 34.2} {
+	puts stderr "width must be >= 34.2"
+        dict set parameters width 34.2
+    }
+    if {$width > 154.2} {
+	puts stderr "width must be <= 154.2"
+        dict set parameters width 154.2
+    }
+    if {$height < 34.2} {
+	puts stderr "height must be >= 34.2"
+        dict set parameters height 34.2
+    }
+    if {$height > 154.2} {
+	puts stderr "height must be <= 154.2"
+        dict set parameters height 154.2
+    }
+
+    return $parameters
+}
+
+#----------------------------------------------------------------
+
+proc sg13g2::diodevdd_2kv_check {parameters} {
+    return [sg13g2::fixed_check $parameters]
+}
+
+#----------------------------------------------------------------
+# Fixed device: Specify all user-editable default values
+#
+# deltax --- Additional horizontal space between devices
+# deltay --- Additional vertical space between devices
+# nx     --- Number of arrayed devices in X
+# ny     --- Number of arrayed devices in Y
+#
+# Note that these values, specifically nx, ny, deltax,
+# and deltay, are properties of the instance, not the cell.
+# They translate to the instance array x and y counts;  while
+# deltax is the x pitch less the cell width, and deltay is the
+# y pitch less the cell height.
+#
+# non-user-editable
+#
+# nocell --- Indicates that this cell has a predefined layout
+#	     and therefore there is no cell to draw.
+# xstep  --- Width of the cell (nominal array pitch in X)
+# ystep  --- Height of the cell (nominal array pitch in Y)
+#----------------------------------------------------------------
+
+# Fixed-layout devices (from sg13g2_fd_pr library)
+#
+# diodevdd_2kv
+# diodevdd_4kv
+# diodevss_2kv
+# diodevss_4kv
+# nmoscl_2
+# nmoscl_4
+
+proc sg13g2::diodevdd_2kv_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    compatible {diodevdd_2kv diodevdd_4kv diodevss_2kv diodevss_4kv} \
+    xstep 7.03 ystep 7.03 class diode}
+}
+proc sg13g2::diodevdd_4kv_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    compatible {diodevdd_2kv diodevdd_4kv diodevss_2kv diodevss_4kv} \
+    xstep 7.03 ystep 8.03 class diode}
+}
+
+proc sg13g2::diodevss_2kv_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    compatible {diodevdd_2kv diodevdd_4kv diodevss_2kv diodevss_4kv} \
+    xstep 7.03 ystep 7.03 class diode}
+}
+
+proc sg13g2::diodevss_4kv_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    compatible {diodevdd_2kv diodevdd_4kv diodevss_2kv diodevss_4kv} \
+    xstep 7.03 ystep 8.03 class diode}
+}
+
+proc sg13g2::nmoscl_2_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    compatible {nmoscl_2 nmoscl_4} \
+    xstep 3.72 ystep 3.72 class mosfet}
+}
+
+proc sg13g2::nmoscl_4_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    compatible {nmoscl_2 nmoscl_4} \
+    xstep 6.44 ystep 6.44 class mosfet}
+}
+
+#----------------------------------------------------------------
+# Bipolar device: Conversion from SPICE netlist parameters to toolkit
+#----------------------------------------------------------------
+
+proc sg13g2::fixed_convert {parameters} {
+    set pdkparams [dict create]
+    dict for {key value} $parameters {
+	switch -nocase $key {
+	    m {
+		 dict set pdkparams nx $value
+	    }
+	    default {
+		# Allow unrecognized parameters to be passed unmodified
+		dict set pdkparams $key $value
+	    }
+	}
+    }
+    return $pdkparams
+}
+
+#----------------------------------------------------------------
+# To be reworked:  Bipolars are not fixed devices.  Each has
+# a unique layout and needs its own drawing routine.
+#----------------------------------------------------------------
+
+proc sg13g2::diodevdd_2kv_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+proc sg13g2::diodevdd_4kv_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+proc sg13g2::diodevss_2kv_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+proc sg13g2::diodevss_4kv_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+proc sg13g2::nmoscl_2_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+proc sg13g2::nmoscl_4_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+#----------------------------------------------------------------
+# Fixed device: Interactively specifies the fixed layout parameters
+#----------------------------------------------------------------
+
+proc sg13g2::fixed_dialog {device parameters} {
+    # Instance fields:	    nx, ny, pitchx, pitchy
+    # Editable fields:	    nx, ny, deltax, deltay
+    # Non-editable fields:  nocell, xstep, ystep
+
+    # Set a local variable for each parameter (e.g., $l, $w, etc.)
+    foreach key [dict keys $parameters] {
+        set $key [dict get $parameters $key]
+    }
+
+    # "nocell" field causes nx and ny to be dropped in from
+    # "array count".  Also "pitchx" and "pitchy" are passed
+    # in internal units.  Convert these to microns and generate
+    # If there is no pitchx and pitchy, then the device has not
+    # yet been created, so keep the deltax and deltay defaults.
+
+    if [dict exists $parameters pitchx] {
+	set pitchux [magic::i2u $pitchx]
+	set stepux [magic::spice2float $xstep]
+        set deltax [magic::3digitpastdecimal [expr $pitchux - $stepux]] 
+        # An array size 1 should not cause deltax to go negative
+	if {$deltax < 0.0} {set deltax 0.0}
+	dict set parameters deltax $deltax
+    }
+    if [dict exists $parameters pitchy] {
+	set pitchuy [magic::i2u $pitchy]
+	set stepuy [magic::spice2float $ystep]
+        set deltay [magic::3digitpastdecimal [expr $pitchuy - $stepuy]] 
+        # An array size 1 should not cause deltay to go negative
+	if {$deltay < 0.0} {set deltay 0.0}
+	dict set parameters deltay $deltay
+    }
+
+    magic::add_entry nx "NX" $parameters
+    magic::add_entry ny "NY" $parameters
+    magic::add_entry deltax "X step (um)" $parameters
+    magic::add_entry deltay "Y step (um)" $parameters
+
+    if {[dict exists $parameters compatible]} {
+       set sellist [dict get $parameters compatible]
+       magic::add_selectlist gencell "Device type" $sellist $parameters $device
+    }
+}
+
+proc sg13g2::diodevdd_2kv_dialog {parameters} {
+    sg13g2::fixed_dialog diodevdd_2kv $parameters
+}
+
+proc sg13g2::diodevdd_4kv_dialog {parameters} {
+    sg13g2::fixed_dialog diodevdd_4kv $parameters
+}
+
+proc sg13g2::diodevss_2kv_dialog {parameters} {
+    sg13g2::fixed_dialog diodevss_2kv $parameters
+}
+
+proc sg13g2::diodevss_4kv_dialog {parameters} {
+    sg13g2::fixed_dialog diodevss_4kv $parameters
+}
+
+proc sg13g2::nmoscl_2_dialog {parameters} {
+    sg13g2::fixed_dialog nmoscl_2 $parameters
+}
+
+proc sg13g2::nmoscl_4_dialog {parameters} {
+    sg13g2::fixed_dialog nmoscl_4 $parameters
 }
 
 #----------------------------------------------------------------
@@ -5464,20 +6474,28 @@ proc sg13g2::fixed_draw {devname parameters} {
 # No additional parameters declared for drawing
 #----------------------------------------------------------------
 
-proc sg13g2::npn13g2_draw {parameters} {
-    return [sg13g2::fixed_draw npn13g2 $parameters]
+proc sg13g2::diodevdd_2kv_draw {parameters} {
+    return [sg13g2::fixed_draw diodevdd_2kv $parameters]
 }
 
-proc sg13g2::npn13g2l_draw {parameters} {
-    return [sg13g2::fixed_draw npn13g2l $parameters]
+proc sg13g2::diodevdd_4kv_draw {parameters} {
+    return [sg13g2::fixed_draw diodevdd_4kv $parameters]
 }
 
-proc sg13g2::npn13g2v_draw {parameters} {
-    return [sg13g2::fixed_draw npn13g2v $parameters]
+proc sg13g2::diodevss_2kv_draw {parameters} {
+    return [sg13g2::fixed_draw diodevss_2kv $parameters]
 }
 
-proc sg13g2::pnpMPA_draw {parameters} {
-    return [sg13g2::fixed_draw pnpMPA $parameters]
+proc sg13g2::diodevss_4kv_draw {parameters} {
+    return [sg13g2::fixed_draw diodevss_4kv $parameters]
+}
+
+proc sg13g2::nmoscl_2_draw {parameters} {
+    return [sg13g2::fixed_draw nmoscl_2 $parameters]
+}
+
+proc sg13g2::nmoscl_4_draw {parameters} {
+    return [sg13g2::fixed_draw nmoscl_4 $parameters]
 }
 
 #----------------------------------------------------------------
@@ -5530,19 +6548,27 @@ proc sg13g2::fixed_check {parameters} {
 
 #----------------------------------------------------------------
 
-proc sg13g2::npn13g2_check {parameters} {
+proc sg13g2::diodevdd_2kv_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::npn13g2l_check {parameters} {
+proc sg13g2::diodevdd_4kv_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::npn13g2v_check {parameters} {
+proc sg13g2::diodevss_2kv_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
-proc sg13g2::pnpMPA_check {parameters} {
+proc sg13g2::diodevss_4kv_check {parameters} {
+    return [sg13g2::fixed_check $parameters]
+}
+
+proc sg13g2::nmoscl_2_check {parameters} {
+    return [sg13g2::fixed_check $parameters]
+}
+
+proc sg13g2::nmoscl_4_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
@@ -5581,14 +6607,37 @@ proc magic::l2u {lambda} {
 # Internal to Microns
 #---------------------
 proc magic::i2u { value } {
-    return [expr {((round([magic::cif scale output] * 10000)) / 10000.0) * $value}]
+    set value [expr {((round([magic::cif scale output] * 10000)) / 10000.0) * $value}]
+    return [format "%.3f" $value]
 }
 
 #---------------------
 # Microns to Internal
 #---------------------
 proc magic::u2i {value} {
-    return [expr {$value / ((round([magic::cif scale output] * 10000)) / 10000.0)}]
+    return [expr {round($value / ((round([magic::cif scale output] * 10000)) / 10000.0))}]
+}
+
+#--------------------------------------------------------------------------
+# Find the smallest integer value greater in magnitude than the given value
+#--------------------------------------------------------------------------
+proc magic::magceil {value} {
+    if {$value < 0} {
+	return [::tcl::mathfunc::floor $value]
+    } else {
+	return [::tcl::mathfunc::ceil $value]
+    }
+}
+
+#--------------------------------------------------------------------------
+# Find the largest integer value less in magnitude than the given value
+#--------------------------------------------------------------------------
+proc magic::magfloor {value} {
+    if {$value < 0} {
+	return [::tcl::mathfunc::ceil $value]
+    } else {
+	return [::tcl::mathfunc::floor $value]
+    }
 }
 
 #---------------------
