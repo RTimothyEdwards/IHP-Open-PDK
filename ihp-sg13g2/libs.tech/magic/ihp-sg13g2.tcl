@@ -52,6 +52,7 @@
 # diodevss_4kv	(fixed layout, array options only)
 # nmoscl_2	(clamp mosfet, fixed layout)
 # nmoscl_4	(clamp mosfet, fixed layout)
+# scr1		(silicon rectifier, fixed layout)
 #
 # Miscellaneous:
 #
@@ -224,6 +225,8 @@ proc sg13g2::addtechmenu {framename} {
 	    "magic::gencell sg13g2::diodevdd_2kv" pdk1
    magic::add_toolkit_command $layoutframe "nMOS clamp" \
 	    "magic::gencell sg13g2::nmoscl_2" pdk1
+   magic::add_toolkit_command $layoutframe "silicon-controlled rectifier" \
+	    "magic::gencell sg13g2::scr1" pdk1
    magic::add_toolkit_separator	$layoutframe pdk1
 
    magic::add_toolkit_command $layoutframe "Bond pad" \
@@ -6919,6 +6922,7 @@ proc sg13g2::diodevdd_2kv_check {parameters} {
 # diodevss_4kv
 # nmoscl_2
 # nmoscl_4
+# scr1
 
 proc sg13g2::diodevdd_2kv_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
@@ -6953,6 +6957,11 @@ proc sg13g2::nmoscl_4_defaults {} {
     return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
     compatible {nmoscl_2 nmoscl_4} \
     xstep 6.44 ystep 6.44 class mosfet}
+}
+
+proc sg13g2::scr1_defaults {} {
+    return {nx 1 ny 1 deltax 0 deltay 0 nocell 1 \
+    xstep 6.44 ystep 6.44 class diode}
 }
 
 #----------------------------------------------------------------
@@ -7001,6 +7010,10 @@ proc sg13g2::nmoscl_2_convert {parameters} {
 }
 
 proc sg13g2::nmoscl_4_convert {parameters} {
+    return [sg13g2::fixed_convert $parameters]
+}
+
+proc sg13g2::scr1_convert {parameters} {
     return [sg13g2::fixed_convert $parameters]
 }
 
@@ -7076,6 +7089,214 @@ proc sg13g2::nmoscl_4_dialog {parameters} {
     sg13g2::fixed_dialog nmoscl_4 $parameters
 }
 
+proc sg13g2::scr1_dialog {parameters} {
+    sg13g2::fixed_dialog scr1 $parameters
+}
+
+#----------------------------------------------------------------
+# Fixed devices:  Generate the devices
+#----------------------------------------------------------------
+
+proc sg13g2::diodevdd_2kv_generate {} {
+    if {[cellname list exists diodevdd_2kv]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load diodevdd_2kv -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source diodevdd_2kv.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+proc sg13g2::diodevdd_4kv_generate {} {
+    if {[cellname list exists diodevdd_4kv]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load diodevdd_4kv -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source diodevdd_4kv.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+proc sg13g2::diodevss_2kv_generate {} {
+    if {[cellname list exists diodevss_2kv]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load diodevss_2kv -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source diodevss_2kv.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+proc sg13g2::diodevss_4kv_generate {} {
+    if {[cellname list exists diodevss_4kv]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load diodevss_4kv -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source diodevss_4kv.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+proc sg13g2::nmoscl_2_generate {} {
+    if {[cellname list exists nmoscl_2]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load nmoscl_2 -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source nmoscl_2.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+proc sg13g2::nmoscl_4_generate {} {
+    if {[cellname list exists nmoscl_4]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load nmoscl_4 -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source nmoscl_4.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+proc sg13g2::scr1_generate {} {
+    if {[cellname list exists scr1]} {return}
+    suspendall
+
+    # Save critical values before creating and editing a new cell 
+    set curcell [cellname list self]
+    set curbox [box values]
+    # Stop the tag method from messing with this procedure
+    set ltag [tag load]
+    tag load {}
+    load scr1 -silent
+    tech unlock *
+    set savesnap [snap]
+    snap internal
+
+    source scr1.tcl
+
+    # Return to our regularly scheduled program
+    load $curcell
+    snap $savesnap
+    tag load $ltag
+    tech revert
+    box values {*}$curbox
+    resumeall
+}
+
 #----------------------------------------------------------------
 # Fixed device: Draw the device
 #----------------------------------------------------------------
@@ -7115,27 +7336,38 @@ proc sg13g2::fixed_draw {devname parameters} {
 #----------------------------------------------------------------
 
 proc sg13g2::diodevdd_2kv_draw {parameters} {
+    if {![cellname list exists diodevdd_2kv]} {sg13g2::diodevdd_2kv_generate}
     return [sg13g2::fixed_draw diodevdd_2kv $parameters]
 }
 
 proc sg13g2::diodevdd_4kv_draw {parameters} {
+    if {![cellname list exists diodevdd_4kv]} {sg13g2::diodevdd_4kv_generate}
     return [sg13g2::fixed_draw diodevdd_4kv $parameters]
 }
 
 proc sg13g2::diodevss_2kv_draw {parameters} {
+    if {![cellname list exists diodevss_2kv]} {sg13g2::diodevss_2kv_generate}
     return [sg13g2::fixed_draw diodevss_2kv $parameters]
 }
 
 proc sg13g2::diodevss_4kv_draw {parameters} {
+    if {![cellname list exists diodevss_4kv]} {sg13g2::diodevss_4kv_generate}
     return [sg13g2::fixed_draw diodevss_4kv $parameters]
 }
 
 proc sg13g2::nmoscl_2_draw {parameters} {
+    if {![cellname list exists nmoscl_2]} {sg13g2::nmoscl_2_generate}
     return [sg13g2::fixed_draw nmoscl_2 $parameters]
 }
 
 proc sg13g2::nmoscl_4_draw {parameters} {
+    if {![cellname list exists nmoscl_4]} {sg13g2::nmoscl_4_generate}
     return [sg13g2::fixed_draw nmoscl_4 $parameters]
+}
+
+proc sg13g2::scr1_draw {parameters} {
+    if {![cellname list exists scr1]} {sg13g2::scr1_generate}
+    return [sg13g2::fixed_draw scr1 $parameters]
 }
 
 #----------------------------------------------------------------
@@ -7209,6 +7441,10 @@ proc sg13g2::nmoscl_2_check {parameters} {
 }
 
 proc sg13g2::nmoscl_4_check {parameters} {
+    return [sg13g2::fixed_check $parameters]
+}
+
+proc sg13g2::scr1_check {parameters} {
     return [sg13g2::fixed_check $parameters]
 }
 
